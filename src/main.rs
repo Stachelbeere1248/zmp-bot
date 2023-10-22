@@ -1,54 +1,52 @@
-use std::env;
+mod commands;
 
-use serenity::{
-    async_trait,
-    model::{
-        channel::Message,
-        gateway::Ready
-    },
-    prelude::*
-};
+use std::collections::HashSet;
+use std::convert::Into;
+use poise::serenity_prelude as serenity;
+use serenity::model::id::UserId;
 
-struct Handler;
-
-#[async_trait]
-impl EventHandler for Handler {
-
-    async fn message(&self, ctx: Context, msg: Message) {
-        if msg.content == "!ping" {
-            let pong = msg.channel_id.say(&ctx, "Pong!").await;
-            if let Err(why) = pong {
-                println!("Error sending message: {:?}", why);
-            }
-
-            let dm = msg.author.dm(&ctx,|m| m.content(" ")).await;
-            if let Err(why) = dm {
-                println!("t {:?}", why)
-            }
-        }
-    }
-    async fn ready(&self, _: Context, ready: Ready) {
-        println!("{} is connected!", ready.user.name);
-    }
-}
+type Error = Box<dyn std::error::Error + Send + Sync>;
+type Context<'a> = poise::Context<'a, Data, Error>;
+// User data, which is stored and accessible in all command invocations
+pub struct Data {}
 
 #[tokio::main]
 async fn main() {
-    // Configure the client with your Discord bot token in the environment.
-    let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
+    let mut owners = HashSet::new();
+    owners.insert(UserId(449579075531440128_u64));
+    let framework = poise::Framework::builder()
+        .options(poise::FrameworkOptions {
+            commands: vec![commands::lfg::lfg()],
+            prefix_options: poise::PrefixFrameworkOptions {
+                prefix: Some("~".into()),
+                ..Default::default()
+            },
+            on_error: |error| {
+                Box::pin(async move {
+                    match error {
+                        poise::FrameworkError::ArgumentParse { error, .. } => {
+                            if let Some(error) = error.downcast_ref::<serenity::RoleParseError>() {
+                                println!("Found a RoleParseError: {:?}", error);
+                            } else {
+                                println!("Not a RoleParseError :(");
+                            }
+                        }
+                        other => poise::builtins::on_error(other).await.unwrap(),
+                    }
+                })
+            },owners,
+            ..Default::default()
+        })
+        .token(std::env::var("DISCORD_TOKEN").unwrap())
+        .intents(
+            serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT,
+        )
+        .setup(move |ctx, _ready, framework| {
+            Box::pin(async move {
+                poise::builtins::register_globally(ctx, &framework.options().commands).await?;
+                Ok(Data {})
+            })
+        });
 
-    // Set gateway intents, which decides what events the bot will be notified about
-    let intents = GatewayIntents::GUILD_MESSAGES
-        | GatewayIntents::DIRECT_MESSAGES
-        | GatewayIntents::MESSAGE_CONTENT
-        | GatewayIntents::GUILD_MEMBERS;
-
-
-
-
-
-    let mut client: Client = Client::builder(&token, intents).event_handler(Handler).await.expect("Err creating client");
-    if let Err(why) = client.start().await {
-        println!("Client error: {:?}", why);
-    }
+    framework.run().await.unwrap();
 }
