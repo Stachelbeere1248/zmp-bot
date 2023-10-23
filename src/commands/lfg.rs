@@ -3,15 +3,13 @@ use crate::commands::lfg::Difficulty::Normal;
 use crate::commands::lfg::Map::*;
 use crate::commands::lfg::Mode::*;
 //from main.rs
-use crate::Context;
-use crate::Error;
+use crate::{Context, Error};
 //
-use serenity::model::id::RoleId;
+use serenity::model::id::{RoleId};
 use serenity::model::mention::Mention;
-use serenity::model::mention::Mention::Role;
-use serenity::prelude::Mentionable;
+use serenity::model::mention::Mention::{Role};
 
-#[derive(Debug, poise::ChoiceParameter)]
+#[derive(Debug, poise::ChoiceParameter, PartialEq)]
 pub enum Map {
     #[name = "Dead End"]
     DeadEnd,
@@ -41,7 +39,9 @@ pub enum Difficulty {
 #[poise::command(slash_command)]
 pub(crate) async fn lfg(
     ctx: Context<'_>,
-    #[rename = "map"] map: Map,
+
+    #[rename = "map"]
+    map: Map,
 
     #[description = "Normal"]
     #[rename = "difficulty"]
