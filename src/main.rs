@@ -1,9 +1,9 @@
 mod commands;
 
-use std::collections::HashSet;
-use std::convert::Into;
 use poise::serenity_prelude as serenity;
 use serenity::model::id::UserId;
+use std::collections::HashSet;
+use std::convert::Into;
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
@@ -34,7 +34,8 @@ async fn main() {
                         other => poise::builtins::on_error(other).await.unwrap(),
                     }
                 })
-            },owners,
+            },
+            owners,
             ..Default::default()
         })
         .token(std::env::var("DISCORD_TOKEN").unwrap())

@@ -1,11 +1,16 @@
+//
 use crate::commands::lfg::Difficulty::Normal;
-use crate::commands::lfg::Mode::Casual;
+use crate::commands::lfg::Map::*;
+use crate::commands::lfg::Mode::*;
+//from main.rs
 use crate::Context;
 use crate::Error;
+//
 use serenity::model::id::RoleId;
 use serenity::model::mention::Mention;
 use serenity::model::mention::Mention::Role;
 use serenity::prelude::Mentionable;
+
 #[derive(Debug, poise::ChoiceParameter)]
 pub enum Map {
     #[name = "Dead End"]
@@ -37,7 +42,10 @@ pub enum Difficulty {
 pub(crate) async fn lfg(
     ctx: Context<'_>,
     #[rename = "map"] map: Map,
-    #[rename = "difficulty"] difficulty: Option<Difficulty>,
+
+    #[description = "Normal"]
+    #[rename = "difficulty"]
+    difficulty: Option<Difficulty>,
 
     #[rename = "mode"]
     #[description = "play-style"]
@@ -67,22 +75,26 @@ pub(crate) async fn lfg(
     let ping: Mention;
     match mode.unwrap_or(Casual) {
         Casual => match map {
-            Map::DeadEnd => ping = Role(RoleId(1005837123921915914)),
-            Map::BadBlood => ping = Role(RoleId(1140190470698438666)),
-            Map::AlienArcadium => ping = Role(RoleId(1105917281898336356)),
+            DeadEnd => ping = Role(RoleId(1005837123921915914)),
+            BadBlood => ping = Role(RoleId(1140190470698438666)),
+            AlienArcadium => ping = Role(RoleId(1105917281898336356)),
         },
-        Mode::Speedrun => ping = Role(RoleId(1005836989595144243)),
-        Mode::Challenge => ping = Role(RoleId(1005836864680361994)),
+        Speedrun => ping = Role(RoleId(1005836989595144243)),
+        Challenge => ping = Role(RoleId(1005836864680361994)),
     }
 
     let mut reply = format!(
-        "{} is looking for {}\n{}/{} {} {}",
-        ctx.author().mention(),
-        ping,
-        current,
-        desired,
-        map.name(),
-        difficulty.unwrap_or(Normal).name()
+        "{c}/{d} {e} {f} {b}",
+        //a = ctx.author().mention(),
+        b = ping,
+        c = current,
+        d = desired,
+        e = map.name(),
+        f = if map != AlienArcadium {
+            difficulty.unwrap_or(Normal).name()
+        } else {
+            Normal.name()
+        }
     );
     if note.is_some() {
         reply.push_str(format!("\nNote: {}", note.unwrap()).as_str())
