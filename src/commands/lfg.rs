@@ -5,9 +5,9 @@ use crate::commands::lfg::Mode::*;
 //from main.rs
 use crate::{Context, Error};
 //
-use serenity::model::id::{RoleId};
+use serenity::model::id::RoleId;
 use serenity::model::mention::Mention;
-use serenity::model::mention::Mention::{Role};
+use serenity::model::mention::Mention::Role;
 
 #[derive(Debug, poise::ChoiceParameter, PartialEq)]
 pub enum Map {
@@ -40,8 +40,7 @@ pub enum Difficulty {
 pub(crate) async fn lfg(
     ctx: Context<'_>,
 
-    #[rename = "map"]
-    map: Map,
+    #[rename = "map"] map: Map,
 
     #[description = "Normal"]
     #[rename = "difficulty"]
