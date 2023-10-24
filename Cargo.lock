@@ -2853,6 +2853,7 @@ dependencies = [
  "anyhow",
  "env_logger",
  "poise",
+ "regex",
  "serenity",
  "shuttle-poise",
  "shuttle-runtime",

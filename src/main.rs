@@ -31,8 +31,11 @@ async fn poise(
 ) -> ShuttlePoise<Data, Error> {
 
     let options = poise::FrameworkOptions {
+/*
+COMMANDS:
+*/
         commands: vec![
-            commands::lfg::lfg(),
+            commands::lfg::lfg()
         ],
         prefix_options: poise::PrefixFrameworkOptions {
             prefix: Some("~".into()),
