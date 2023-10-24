@@ -6,10 +6,11 @@ use serenity::client::EventHandler;
 use serenity::model::id::UserId;
 use std::collections::HashSet;
 use std::convert::Into;
-
+use shuttle_secrets::SecretStore;
+use shuttle_poise::ShuttlePoise;
+struct Data {} // User data, which is stored and accessible in all command invocations
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
-pub struct Data {}
 struct ReadyHandler;
 
 #[async_trait]
@@ -23,8 +24,12 @@ impl EventHandler for ReadyHandler {
     }
 }
 
-#[tokio::main]
-async fn main() {
+#[shuttle_runtime::main]
+async fn poise(
+    #[shuttle_secrets::Secrets]
+    secret_store: SecretStore
+) -> ShuttlePoise<Data, Error> {
+
     let options = poise::FrameworkOptions {
         commands: vec![
             commands::lfg::lfg(),
@@ -53,10 +58,11 @@ async fn main() {
         },
         ..Default::default()
     };
+    let discord_token = secret_store.get("DISCORD_TOKEN").unwrap();
 
     let framework = poise::Framework::builder()
         .options(options)
-        .token(std::env::var("DISCORD_TOKEN").unwrap())
+        .token(discord_token)
         .intents(
             serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT,
         )
@@ -65,9 +71,11 @@ async fn main() {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
                 Ok(Data {})
             })
-        });
-
-    framework.run().await.unwrap();
+        })
+        .build()
+        .await
+        .map_err(shuttle_runtime::CustomError::new)?;
+    Ok(framework.into())
 }
 async fn event_handler(
     _ctx: &serenity::Context,
