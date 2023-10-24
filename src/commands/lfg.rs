@@ -101,7 +101,7 @@ pub(crate) async fn lfg(
         if regex.is_match(&t) {
             reply = String::from("Your Note seems to match a ping <:Maark:1128577127931985950>");
         } else {
-            reply.push_str(format!("\nNote: `{}`", t).as_str());
+            reply.push_str(format!("\nNote: {}", t).as_str());
         }
     }
 
