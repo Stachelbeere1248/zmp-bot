@@ -1,6 +1,5 @@
 mod commands;
 
-use crate::commands::round::round;
 use poise::{async_trait, serenity_prelude as serenity, Event};
 use serenity::client::EventHandler;
 use serenity::model::id::UserId;
@@ -35,7 +34,9 @@ async fn poise(
 COMMANDS:
 */
         commands: vec![
-            commands::lfg::lfg()
+            commands::lfg::lfg(),
+            commands::round::round(),
+            commands::xd::xd(),
         ],
         prefix_options: poise::PrefixFrameworkOptions {
             prefix: Some("~".into()),

@@ -1,43 +1,144 @@
 use crate::commands::zombies::zombies::*;
 
-struct Wave {
-    hordes: Vec<Horde>,
-}
-struct Round {
-    waves: Vec<Wave>,
-}
+pub type Wave = Vec<Horde>;
+pub type Round = Vec<Wave>;
 
-fn get_bb_r1() -> Vec<Wave> {
-    vec![
-        Wave {
-            hordes: vec![
+pub(crate) struct BadBlood;
+
+impl BadBlood {
+    fn round1() -> Round {
+        vec![
+            //wave 1
+            vec![
                 Horde {
                     zombie: BB_Z_1,
                     count: 4,
                 }
-            ]
-        },
-        Wave {
-            hordes: vec![
+            ],
+            //wave 2
+            vec![
                 Horde {
                     zombie: BB_Z_1,
                     count: 5,
                 }
             ]
-        }
-    ]
-}
-pub(crate) fn get_bb_by_round(round: u8) {
-    match round {
-        1 => t(get_bb_r1()),
-        _ => {}
-    };
-}
-fn t(waves:Vec<Wave>) {
-    for wave in waves {
-        let hordes:Vec<Horde> = wave.hordes;
-        for horde in hordes {
-            println!("{:?} x {}", horde.zombie, horde.count);
+        ]
+    }
+    fn round2() -> Round {
+        vec![
+            //wave 1
+            vec![
+                Horde {
+                    zombie: BB_Z_1,
+                    count: 4,
+                },
+                Horde {
+                    zombie: BB_SZ_1,
+                    count: 1,
+                }
+            ],
+            //wave 2
+            vec![
+                Horde {
+                    zombie: BB_Z_2,
+                    count: 4,
+                },
+                Horde {
+                    zombie: BB_SZ_1,
+                    count: 2,
+                }
+            ]
+        ]
+    }
+    fn round3() -> Round {
+        vec![
+            //wave 1
+            vec![
+                Horde {
+                    zombie: BB_Z_2,
+                    count: 4,
+                },
+                Horde {
+                    zombie: BB_SZ_1,
+                    count: 3,
+                },
+                Horde {
+                    zombie: BB_S_1,
+                    count: 2,
+                }
+            ],
+            //wave 2
+            vec![
+                Horde {
+                    zombie: BB_Z_2,
+                    count: 3,
+                },
+                Horde {
+                    zombie: BB_SZ_1,
+                    count: 2,
+                },
+                Horde {
+                    zombie: BB_S_1,
+                    count: 2,
+                }
+            ]
+        ]
+    }
+    fn round4() -> Round {
+        vec![
+            //wave 1
+            vec![
+                Horde {
+                    zombie: BB_Z_2,
+                    count: 4,
+                },
+                Horde {
+                    zombie: BB_SZ_1,
+                    count: 2,
+                },
+            ],
+            //wave 2
+            vec![
+                Horde {
+                    zombie: BB_Z_2,
+                    count: 3,
+                },
+                Horde {
+                    zombie: BB_SZ_1,
+                    count: 2,
+                },
+                Horde {
+                    zombie: BB_S_1,
+                    count: 2,
+                }
+            ],
+            //wave 3
+            vec![
+                Horde {
+                    zombie: BB_Z_2,
+                    count: 3,
+                },
+                Horde {
+                    zombie: BB_SZ_1,
+                    count: 2,
+                },
+                Horde {
+                    zombie: BB_S_1,
+                    count: 2,
+                }
+            ]
+        ]
+    }
+    /*fn round5() -> Round {
+
+    }*/
+    pub(crate) fn get_round(round: u8) -> Round {
+        match round {
+            1 => Self::round1(),
+            2 => Self::round2(),
+            3 => Self::round3(),
+            4 => Self::round4(),
+            _ => panic!("Round {} not found", round)
         }
     }
 }
