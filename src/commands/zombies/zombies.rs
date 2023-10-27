@@ -9,7 +9,7 @@ type ChildrenCount = u8;
 type RespawningChildren = bool;
 #[derive(Debug)]
 pub struct Family {
-    family: *const str,
+    name: *const str,
     damage: u8,
     health: u16,
     follow_range: u8,
@@ -63,7 +63,7 @@ impl Zombie {
         armor
     }
     pub fn family(&self) -> *const str {
-        self.family.family
+        self.family.name
     }
 }
 
@@ -74,42 +74,42 @@ pub struct Horde {
 }
 
 pub const BB_BASIC: Family = Family {
-    family: "basic",
+    name: "basic",
     damage: 3,
     health: 22,
     follow_range: 35,
     base_armor: 2,
 };
 pub const BB_SLIME_ZOMBIE: Family = Family {
-    family: "slime_zombie",
+    name: "slime_zombie",
     damage: 3,
     health: 22,
     follow_range: 35,
     base_armor: 2,
 };
 pub const BB_SLIME: Family = Family {
-    family: "slime",
+    name: "slime",
     damage: 0,
     health: 4,
     follow_range: 16,
     base_armor: 2,
 };
 pub const BB_WITCH: Family = Family {
-    family: "witch",
+    name: "witch",
     damage: 2,
     health: 20,
     follow_range: 16,
     base_armor: 0,
 };
 pub const BB_WOLF: Family = Family {
-    family: "wolf",
+    name: "wolf",
     damage: 4,
     health: 16,
     follow_range: 16,
     base_armor: 0,
 };
 pub const BB_WEREWOLF: Family = Family {
-    family: "werewolf",
+    name: "werewolf",
     damage: 3,
     health: 32,
     follow_range: 35,
@@ -261,7 +261,7 @@ pub const BB_WW_1: Zombie = Zombie {
 
 pub const BB_LILY: Zombie = Zombie {
     family: Family {
-        family: "bb_lore",
+        name: "bb_lore",
         damage: 3,
         health: 55,
         follow_range: 35,
@@ -284,7 +284,7 @@ pub const BB_LILY: Zombie = Zombie {
 };
 pub const BB_ELLIE: Zombie = Zombie {
     family: Family {
-        family: "bb_lore",
+        name: "bb_lore",
         damage: 4,
         health: 30,
         follow_range: 16,
