@@ -121,9 +121,9 @@ pub const BB_SZ_1: Zombie = Zombie {
     speed: 0.3,
     armor: [
         SLIME_HEAD,
-        Chestplate(3,false,Leather(0x000000)),
-        Leggings(2,false,Leather(0x000000)),
-        Boots(1,false,Leather(0x000000)),
+        Chestplate(3,false,Leather(0x55FF55)),
+        Leggings(2,false,Leather(0x55FF55)),
+        Boots(1,false,Leather(0x55FF55)),
     ],
     weapon: SLIME_BALL,
 };
