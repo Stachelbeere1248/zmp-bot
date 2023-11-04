@@ -1,12 +1,14 @@
+use std::fmt::format;
+use crate::commands::lfg::Map;
 use crate::commands::zombies::zombies::*;
 
-pub type Wave = Vec<Horde>;
-pub type Round = Vec<Wave>;
+type Wave<'a> = Vec<Horde<'a>>;
+pub(crate) type Round<'a> = Vec<Wave<'a>>;
 
-pub(crate) struct BadBlood;
+struct BadBlood;
 
 impl BadBlood {
-    fn round1() -> Round {
+    fn round1<'a>() -> Round<'a> {
         vec![
             //wave 1
             vec![
@@ -24,7 +26,7 @@ impl BadBlood {
             ]
         ]
     }
-    fn round2() -> Round {
+    fn round2<'a>() -> Round<'a> {
         vec![
             //wave 1
             vec![
@@ -50,7 +52,7 @@ impl BadBlood {
             ]
         ]
     }
-    fn round3() -> Round {
+    fn round3<'a>() -> Round<'a> {
         vec![
             //wave 1
             vec![
@@ -84,7 +86,7 @@ impl BadBlood {
             ]
         ]
     }
-    fn round4() -> Round {
+    fn round4<'a>() -> Round<'a> {
         vec![
             //wave 1
             vec![
@@ -129,7 +131,7 @@ impl BadBlood {
             ]
         ]
     }
-    fn round5() -> Round {
+    fn round5<'a>() -> Round<'a> {
         vec![
             //wave 1
             vec![
@@ -174,7 +176,7 @@ impl BadBlood {
             ]
         ]
     }
-    fn round6() -> Round {
+    fn round6<'a>() -> Round<'a> {
         vec![
             //wave 1
             vec![
@@ -211,7 +213,7 @@ impl BadBlood {
             ]
         ]
     }
-    fn round7() -> Round {
+    fn round7<'a>() -> Round<'a> {
         vec![
             //wave 1
             vec![
@@ -248,10 +250,81 @@ impl BadBlood {
             ]
         ]
     }
-    /*fn round8() -> Round {
-
-    }*/
-    pub(crate) fn get_round(round: u8) -> Option<Round> {
+    fn round8<'a>() -> Round<'a> {
+        vec![
+            //wave 1
+            vec![
+                Horde {
+                    zombie: BB_Z_5,
+                    count: 4,
+                },
+                Horde {
+                    zombie: BB_P_1,
+                    count: 2,
+                }
+            ],
+            //wave 2
+            vec![
+                Horde {
+                    zombie: BB_Z_5,
+                    count: 4,
+                },
+                Horde {
+                    zombie: BB_P_1,
+                    count: 2,
+                }
+            ],
+            //wave 3
+            vec![
+                Horde {
+                    zombie: BB_Z_5,
+                    count: 4,
+                },
+                Horde {
+                    zombie: BB_P_1,
+                    count: 1,
+                },
+            ]
+        ]
+    }
+    fn round9<'a>() -> Round<'a> {
+        vec![
+            //wave 1
+            vec![
+                Horde {
+                    zombie: BB_SZ_1,
+                    count: 3,
+                },
+                Horde {
+                    zombie: BB_S_1,
+                    count: 5,
+                }
+            ],
+            //wave 2
+            vec![
+                Horde {
+                    zombie: BB_SZ_1,
+                    count: 3,
+                },
+                Horde {
+                    zombie: BB_S_1,
+                    count: 4,
+                }
+            ],
+            //wave 3
+            vec![
+                Horde {
+                    zombie: BB_SZ_1,
+                    count: 3,
+                },
+                Horde {
+                    zombie: BB_S_1,
+                    count: 4,
+                },
+            ]
+        ]
+    }
+    fn get_round<'b>(round: u8) -> Option<Round<'b>> {
         match round {
             1 => Some(Self::round1()),
             2 => Some(Self::round2()),
@@ -260,7 +333,79 @@ impl BadBlood {
             5 => Some(Self::round5()),
             6 => Some(Self::round6()),
             7 => Some(Self::round7()),
+            8 => Some(Self::round8()),
+            9 => Some(Self::round9()),
             _ => None
         }
     }
 }
+
+pub(crate) fn get_round<'a>(
+    map: &Map,
+    round: u8,
+) -> Option<Round<'a>> {
+    match map {
+        Map::DeadEnd => BadBlood::get_round(round),
+        Map::BadBlood => BadBlood::get_round(round),
+        Map::AlienArcadium => BadBlood::get_round(round)
+    }
+}
+
+pub(crate) fn get_round_string (
+    map: Map,
+    r: u8) -> String {
+    let round = get_round(&map, r);
+    if round.is_some() {
+        let mut string = String::new();
+        let mut wave_index:u8 = 0;
+        for wave in round.unwrap() {
+            wave_index += 1;
+
+            string.push_str(format!("# Wave {}\n", wave_index).as_str());
+            for horde in wave {
+                string.push_str(format!(
+                    "### {}x {} {}\n",
+                    horde.count,
+                    horde.zombie.family(),
+                    horde.zombie.tier
+                ).as_str());
+                let mut armor_string = String::new();
+                let armor = *horde.zombie.armor();
+                let (x,y,z) = armor.get(0).unwrap();
+                let (x,_,z) = armor.get(1).unwrap();
+                let (x,_,z) = armor.get(2).unwrap();
+                let (x,_,z) = armor.get(3).unwrap();
+                armor_string.push_str("");
+
+
+                string.push_str(format!(
+                    "- Health: {}\n- Damage: {}\n- Armor: {} {:?}\n- Follow Range: {}\n- Speed: {}\n",
+                    horde.zombie.health(),
+                    horde.zombie.damage().1,
+                    horde.zombie.armor_value(),
+                    horde.zombie.armor(),
+                    horde.zombie.follow_range(),
+                    horde.zombie.speed,
+                ).as_str());
+            }
+        }
+        string
+    } else {
+        String::from(format!("There is no Round {} on the Map {}", r, &map))
+    }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

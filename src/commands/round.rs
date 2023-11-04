@@ -4,10 +4,9 @@ use crate::commands::{
         *,
         Map::{*}
     },
-    zombies::{
-        rounds
-    }
+    zombies::rounds
 };
+use crate::commands::zombies::rounds::get_round_string;
 
 #[poise::command(slash_command)]
 pub(crate) async fn round(
@@ -18,11 +17,9 @@ pub(crate) async fn round(
     #[max = 105_u8]
     round: u8
 ) -> Result<(), Error> {
-    match map {
-        DeadEnd => {}
-        BadBlood => {rounds::BadBlood::get_round(round);}
-        AlienArcadium => {}
-    }
-    ctx.say(format!("hi")).await?;
+
+    let t = get_round_string(map,round);
+
+    ctx.say(t).await?;
     Ok(())
 }
