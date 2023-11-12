@@ -30,14 +30,11 @@ async fn poise(
 ) -> ShuttlePoise<Data, Error> {
 
     let options = poise::FrameworkOptions {
-/*
-COMMANDS:
-*/
         commands: vec![
             commands::lfg::lfg(),
-            commands::round::round(),
             commands::xd::xd(),
         ],
+        manual_cooldowns: true,
         prefix_options: poise::PrefixFrameworkOptions {
             prefix: Some("~".into()),
             ..Default::default()

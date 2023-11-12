@@ -1,3 +1,4 @@
+use std::time::Duration;
 //
 use crate::commands::lfg::Difficulty::Normal;
 use crate::commands::lfg::Map::*;
@@ -65,12 +66,37 @@ pub(crate) async fn lfg(
     #[description = "optional extra message"]
     #[rename = "message"]
     note: Option<String>,
+
 ) -> Result<(), Error> {
+    {
+        let mut cooldown_tracker = ctx.command().cooldowns.lock().unwrap();
+        let mut cooldown_durations = poise::CooldownConfig::default();
+        cooldown_durations.user = Some(Duration::from_secs(600));
+
+        match cooldown_tracker.remaining_cooldown_2(ctx, &cooldown_durations) {
+            Some(remaining) => {
+                return Err(format!("Please wait {} seconds", remaining.as_secs()).into())
+            }
+            None => cooldown_tracker.start_cooldown(ctx),
+        }
+    };
+
+
+
+
+
+
+
+
+
+
+
+
+
     let current = current_players.unwrap_or(1);
     let mut desired = desired_players.unwrap_or(4);
-    if current >= desired {
-        desired = 4
-    }
+    if current >= desired { desired = 4 }
+    let map_name: &str = map.name();
     let ping: Mention;
     match mode.unwrap_or(Casual) {
         Casual => match map {
@@ -81,20 +107,23 @@ pub(crate) async fn lfg(
         Speedrun => ping = Role(RoleId(1005836989595144243)),
         Challenge => ping = Role(RoleId(1005836864680361994)),
     }
+    let diff_name: &str = if map != AlienArcadium {
+        difficulty.unwrap_or(Normal).name()
+    } else {
+        Normal.name()
+    };
+
+
 
     let mut reply = format!(
         "{c}/{d} {e} {f} {b}",
-        //a = ctx.author().mention(),
         b = ping,
         c = current,
         d = desired,
-        e = map.name(),
-        f = if map != AlienArcadium {
-            difficulty.unwrap_or(Normal).name()
-        } else {
-            Normal.name()
-        }
+        e = map_name,
+        f = diff_name
     );
+
     if note.is_some() {
         let t = note.unwrap();
         let regex = regex::Regex::new("(<@&?[0-9]*>)|(@everyone|@here)").unwrap();
@@ -104,6 +133,8 @@ pub(crate) async fn lfg(
             reply.push_str(format!("\nNote: {}", t).as_str());
         }
     }
+
+
 
     if let Err(why) = ctx
         .send(|m| {
