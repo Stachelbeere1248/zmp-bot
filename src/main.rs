@@ -33,6 +33,7 @@ async fn poise(
         commands: vec![
             commands::lfg::lfg(),
             commands::xd::xd(),
+            commands::helpstart::helpstart()
         ],
         manual_cooldowns: true,
         prefix_options: poise::PrefixFrameworkOptions {
