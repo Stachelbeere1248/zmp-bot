@@ -1,4 +1,3 @@
-use std::time::Duration;
 //
 use crate::commands::lfg::Difficulty::Normal;
 use crate::commands::lfg::Map::*;
@@ -9,6 +8,7 @@ use crate::{Context, Error};
 use serenity::model::id::RoleId;
 use serenity::model::mention::Mention;
 use serenity::model::mention::Mention::Role;
+use crate::commands::command_helper;
 
 #[derive(Debug, poise::ChoiceParameter, PartialEq)]
 pub enum Map {
@@ -27,6 +27,8 @@ pub enum Mode {
     Speedrun,
     #[name = "Challenge"]
     Challenge,
+    #[name = "Event/Challenge"]
+    Event,
 }
 #[derive(Debug, poise::ChoiceParameter)]
 pub enum Difficulty {
@@ -49,7 +51,7 @@ pub(crate) async fn lfg(
 
     #[rename = "mode"]
     #[description = "play-style"]
-    mode: Option<Mode>,
+    mode: Mode,
 
     #[min = 1_u8]
     #[max = 3_u8]
@@ -68,28 +70,13 @@ pub(crate) async fn lfg(
     note: Option<String>,
 
 ) -> Result<(), Error> {
-    {
-        let mut cooldown_tracker = ctx.command().cooldowns.lock().unwrap();
-        let mut cooldown_durations = poise::CooldownConfig::default();
-        cooldown_durations.user = Some(Duration::from_secs(600));
-
-        match cooldown_tracker.remaining_cooldown_2(ctx, &cooldown_durations) {
-            Some(remaining) => {
-                return Err(format!("Please wait {} seconds", remaining.as_secs()).into())
-            }
-            None => cooldown_tracker.start_cooldown(ctx),
-        }
-    };
-
-
-
-
-
-
-
-
-
-
+    if let Some(value) = command_helper::cooldown(
+        &ctx,
+        600,
+        300
+    ) {
+        return value;
+    }
 
 
 
@@ -98,7 +85,7 @@ pub(crate) async fn lfg(
     if current >= desired { desired = 4 }
     let map_name: &str = map.name();
     let ping: Mention;
-    match mode.unwrap_or(Casual) {
+    match mode {
         Casual => match map {
             DeadEnd => ping = Role(RoleId(1005837123921915914)),
             BadBlood => ping = Role(RoleId(1140190470698438666)),
@@ -106,6 +93,7 @@ pub(crate) async fn lfg(
         },
         Speedrun => ping = Role(RoleId(1005836989595144243)),
         Challenge => ping = Role(RoleId(1005836864680361994)),
+        Event => ping = Role(RoleId(1175116511095050331))
     }
     let diff_name: &str = if map != AlienArcadium {
         difficulty.unwrap_or(Normal).name()
@@ -135,15 +123,5 @@ pub(crate) async fn lfg(
     }
 
 
-
-    if let Err(why) = ctx
-        .send(|m| {
-            m.content(reply)
-                .allowed_mentions(|am| am.parse(serenity::builder::ParseValue::Roles))
-        })
-        .await
-    {
-        println!("Error sending message: {:?}", why)
-    }
-    Ok(())
+    command_helper::send(ctx, reply).await
 }
