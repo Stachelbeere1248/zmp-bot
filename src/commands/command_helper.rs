@@ -8,7 +8,7 @@ pub(crate) async fn send(
     if let Err(why) = ctx
         .send(|m| {
             m.content(reply)
-                .allowed_mentions(|am| am.parse(serenity::builder::ParseValue::Roles))
+                .allowed_mentions(|am| am.parse(poise::serenity_prelude::ParseValue::Roles))
         })
         .await
     {
