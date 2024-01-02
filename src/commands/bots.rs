@@ -2,7 +2,7 @@ use crate::{Context, Error};
 use crate::commands::{command_helper, helpstart};
 use std::string::String;
 
-#[poise::command(slash_command)]
+#[poise::command(slash_command,guild_only)]
 pub(crate) async fn bots(
     ctx: Context<'_>,
 

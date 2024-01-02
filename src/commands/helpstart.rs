@@ -3,7 +3,7 @@ use crate::commands::command_helper;
 
 static mut BOTS_AVAILABLE: u8 = 0;
 
-#[poise::command(slash_command)]
+#[poise::command(slash_command,guild_only)]
 pub(crate) async fn helpstart(
     ctx: Context<'_>,
 
@@ -27,7 +27,7 @@ pub(crate) async fn helpstart(
         };
         format!(
             "<@&1008075054971621448>\nneed: {}"
-            , (needed_players - bots)
+            , needed_players - bots
         )
     };
 

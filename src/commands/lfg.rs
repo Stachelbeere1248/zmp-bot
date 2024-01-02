@@ -38,7 +38,7 @@ pub enum Difficulty {
     #[name = "R.I.P."]
     Rip,
 }
-#[poise::command(slash_command)]
+#[poise::command(slash_command,guild_only)]
 pub(crate) async fn lfg(
     ctx: Context<'_>,
 
