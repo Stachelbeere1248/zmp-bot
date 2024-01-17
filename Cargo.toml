@@ -6,14 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-poise = "0.5.6"
-serenity = { version = "0.12.0", default-features = false, features = ["client", "gateway", "model", "rustls_backend", "utils"]}
+poise = "0.6.1"
+serenity = { version = "0.12.0", default-features = false,  features = ["client", "gateway", "model", "rustls_backend", "utils", "framework"] }
 tokio = { version = "1.21.2", features = ["macros", "rt-multi-thread", "rt"] }
 env_logger = "0.10.0"
-shuttle-secrets = "0.35.2"
-shuttle-poise = "0.35.2"
-shuttle-runtime = "0.35.2"
 anyhow = "1.0.75"
 tracing = "0.1.40"
 regex = "1.10.2"
-cargo-shuttle = { version = "0.35.2" }

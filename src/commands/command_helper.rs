@@ -1,14 +1,18 @@
-use std::time::Duration;
 use crate::{Context, Error};
+use serenity::all::CreateAllowedMentions;
+use std::time::Duration;
 
-pub(crate) async fn send(
-    ctx: Context<'_>,
-    reply: String
-) -> Result<(), Error> {
+pub(crate) async fn send(ctx: Context<'_>, reply: String) -> Result<(), Error> {
     if let Err(why) = ctx
-        .send(|m| {
-            m.content(reply)
-                .allowed_mentions(|am| am.parse(poise::serenity_prelude::ParseValue::Roles))
+        .send(poise::CreateReply {
+            content: Some(reply),
+            embeds: vec![],
+            attachments: vec![],
+            ephemeral: None,
+            components: None,
+            allowed_mentions: Some(CreateAllowedMentions::new().all_roles(true)),
+            reply: false,
+            __non_exhaustive: (),
         })
         .await
     {
@@ -17,21 +21,22 @@ pub(crate) async fn send(
     Ok(())
 }
 
-pub(crate) fn cooldown(
-    ctx: &Context,
-    user: u64,
-    global: u64
-) -> Option<Result<(), Error>> {
+pub(crate) fn cooldown(ctx: &Context, user: u64, global: u64) -> Option<Result<(), Error>> {
     let mut cooldown_tracker = ctx.command().cooldowns.lock().unwrap();
-    let mut cooldown_durations = poise::CooldownConfig::default();
-    cooldown_durations.user = Some(Duration::from_secs(user));
-    cooldown_durations.global = Some(Duration::from_secs(global));
-
-    match cooldown_tracker.remaining_cooldown_2(*ctx, &cooldown_durations) {
-        Some(remaining) =>
-            Some(Err(format!("Please wait {} seconds", remaining.as_secs()).into())),
+    let cooldown_durations = poise::CooldownConfig {
+        global: Some(Duration::from_secs(global)),
+        user: Some(Duration::from_secs(user)),
+        guild: None,
+        channel: None,
+        member: None,
+        __non_exhaustive: (),
+    };
+    match cooldown_tracker.remaining_cooldown((*ctx).cooldown_context(), &cooldown_durations) {
+        Some(remaining) => Some(Err(
+            format!("Please wait {} seconds", remaining.as_secs()).into()
+        )),
         None => {
-            cooldown_tracker.start_cooldown(*ctx);
+            cooldown_tracker.start_cooldown((*ctx).cooldown_context());
             None
         }
     }

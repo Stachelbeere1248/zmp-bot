@@ -5,9 +5,10 @@ use crate::commands::lfg::Mode::*;
 //from main.rs
 use crate::{Context, Error};
 //
+use crate::commands::command_helper;
+use poise::ChoiceParameter;
 use serenity::model::mention::Mention;
 use serenity::model::mention::Mention::Role;
-use crate::commands::command_helper;
 
 #[derive(Debug, poise::ChoiceParameter, PartialEq)]
 pub enum Map {
@@ -38,7 +39,7 @@ pub enum Difficulty {
     #[name = "R.I.P."]
     Rip,
 }
-#[poise::command(slash_command,guild_only)]
+#[poise::command(slash_command, guild_only)]
 pub(crate) async fn lfg(
     ctx: Context<'_>,
 
@@ -67,40 +68,33 @@ pub(crate) async fn lfg(
     #[description = "optional extra message"]
     #[rename = "message"]
     note: Option<String>,
-
 ) -> Result<(), Error> {
-    if let Some(value) = command_helper::cooldown(
-        &ctx,
-        600,
-        300
-    ) {
+    if let Some(value) = command_helper::cooldown(&ctx, 600, 300) {
         return value;
     }
 
-
-
     let current = current_players.unwrap_or(1);
     let mut desired = desired_players.unwrap_or(4);
-    if current >= desired { desired = 4 }
+    if current >= desired {
+        desired = 4
+    }
     let map_name: &str = map.name();
     let ping: Mention;
     match mode {
         Casual => match map {
             DeadEnd => ping = Role(1005837123921915914.into()),
             BadBlood => ping = Role(1140190470698438666.into()),
-            AlienArcadium => ping = Role(1105917281898336356.into())
+            AlienArcadium => ping = Role(1105917281898336356.into()),
         },
         Speedrun => ping = Role(1005836989595144243.into()),
         Challenge => ping = Role(1005836864680361994.into()),
-        Event => ping = Role(1175116511095050331.into())
+        Event => ping = Role(1175116511095050331.into()),
     }
     let diff_name: &str = if map != AlienArcadium {
         difficulty.unwrap_or(Normal).name()
     } else {
         Normal.name()
     };
-
-
 
     let mut reply = format!(
         "{c}/{d} {e} {f} {b}",
@@ -120,7 +114,6 @@ pub(crate) async fn lfg(
             reply.push_str(format!("\nNote: {}", t).as_str());
         }
     }
-
 
     command_helper::send(ctx, reply).await
 }
