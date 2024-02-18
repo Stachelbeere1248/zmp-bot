@@ -1,11 +1,10 @@
 //
-use crate::commands::lfg::Difficulty::Normal;
-use crate::commands::lfg::Map::*;
-use crate::commands::lfg::Mode::*;
-//from main.rs
-use crate::{Context, Error};
+use crate::discord::commands::lfg::Difficulty::Normal;
+use crate::discord::commands::lfg::Map::*;
+use crate::discord::commands::lfg::Mode::*;
+use crate::discord::{Context, Error};
 //
-use crate::commands::command_helper;
+use crate::discord::commands::command_helper;
 use poise::ChoiceParameter;
 use serenity::model::mention::Mention;
 use serenity::model::mention::Mention::Role;

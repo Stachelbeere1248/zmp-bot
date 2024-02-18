@@ -1,5 +1,5 @@
-use crate::commands::command_helper;
-use crate::{Context, Error};
+use crate::discord::commands::command_helper;
+use crate::discord::{Context, Error};
 
 static mut BOTS_AVAILABLE: u8 = 0;
 

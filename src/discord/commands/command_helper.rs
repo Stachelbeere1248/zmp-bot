@@ -1,4 +1,4 @@
-use crate::{Context, Error};
+use crate::discord::{Context, Error};
 use serenity::all::CreateAllowedMentions;
 use std::time::Duration;
 
