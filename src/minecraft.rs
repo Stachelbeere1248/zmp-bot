@@ -1,7 +1,6 @@
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use azalea::{swarm::prelude::*, protocol::ServerAddress, ClientInformation, prelude::*, DefaultPlugins, DefaultBotPlugins};
-use azalea::app::PluginGroup;
 use azalea::protocol::packets::configuration::serverbound_client_information_packet::{ChatVisibility, HumanoidArm, ModelCustomization};
 use azalea::swarm::DefaultSwarmPlugins;
 
@@ -13,10 +12,9 @@ pub(crate) async fn main() {
 
     let swarm_builder = SwarmBuilder::new_without_plugins()
         .add_plugins((
-            DefaultPlugins,//.build().disable::<bevy_log::LogPlugin>(),
+            DefaultPlugins,
             DefaultBotPlugins,
             DefaultSwarmPlugins
-
         ))
         .set_handler(handle)
         .set_swarm_handler(swarm_handle)
