@@ -1,5 +1,5 @@
-use crate::discord::commands::{command_helper, helpstart};
-use crate::discord::{Context, Error};
+use crate::commands::{command_helper, helpstart};
+use crate::{Context, Error};
 use std::string::String;
 
 #[poise::command(slash_command, guild_only)]
