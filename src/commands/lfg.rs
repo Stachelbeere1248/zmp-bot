@@ -27,8 +27,10 @@ pub enum Mode {
     Speedrun,
     #[name = "Challenge"]
     Challenge,
-    #[name = "Event/Challenge"]
+    #[name = "Challenge of the week"]
     Event,
+    #[name = "Tournament Practice"]
+    Tournament
 }
 #[derive(Debug, poise::ChoiceParameter)]
 pub enum Difficulty {
@@ -89,6 +91,7 @@ pub(crate) async fn lfg(
         Speedrun => ping = Role(1005836989595144243.into()),
         Challenge => ping = Role(1005836864680361994.into()),
         Event => ping = Role(1175116511095050331.into()),
+        Tournament => ping = Role(1210508966036242445.into()),
     }
     let diff_name: &str = if map != AlienArcadium {
         difficulty.unwrap_or(Normal).name()
