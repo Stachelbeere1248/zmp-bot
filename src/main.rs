@@ -4,6 +4,8 @@ use poise::{async_trait, serenity_prelude as serenity};
 use serenity::{client::EventHandler, model::id::UserId, FullEvent};
 use std::collections::HashSet;
 use std::convert::Into;
+use serenity::all::{Activity, ActivityData};
+use serenity::all::ShardRunnerMessage::SetActivity;
 
 struct Data {} // User data, which is stored and accessible in all command invocations
 type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -72,6 +74,7 @@ async fn main() {
 
     let client = serenity::ClientBuilder::new(token, intents)
         .framework(framework)
+        .activity(ActivityData::playing("arcade_zombies_prison"))
         .await;
     client.unwrap().start().await.unwrap()
 }
