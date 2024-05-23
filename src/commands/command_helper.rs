@@ -1,8 +1,8 @@
-use crate::{Context, Error};
-use serenity::all::CreateAllowedMentions;
 use std::time::Duration;
 
-pub(crate) async fn send(ctx: Context<'_>, reply: String) -> Result<(), Error> {
+use crate::{Context, Error};
+
+pub(crate) async fn send_simple(ctx: Context<'_>, reply: String) -> Result<(), Error> {
     if let Err(why) = ctx
         .send(poise::CreateReply {
             content: Some(reply),
@@ -10,7 +10,7 @@ pub(crate) async fn send(ctx: Context<'_>, reply: String) -> Result<(), Error> {
             attachments: vec![],
             ephemeral: None,
             components: None,
-            allowed_mentions: Some(CreateAllowedMentions::new().all_roles(true)),
+            allowed_mentions: None,
             reply: false,
             __non_exhaustive: (),
         })
@@ -21,7 +21,7 @@ pub(crate) async fn send(ctx: Context<'_>, reply: String) -> Result<(), Error> {
     Ok(())
 }
 
-pub(crate) fn cooldown(ctx: &Context, user: u64, global: u64) -> Option<Result<(), Error>> {
+pub(crate) fn cooldown(ctx: &Context, user: u64, global: u64) -> Result<(), Error> {
     let mut cooldown_tracker = ctx.command().cooldowns.lock().unwrap();
     let cooldown_durations = poise::CooldownConfig {
         global: Some(Duration::from_secs(global)),
@@ -32,12 +32,7 @@ pub(crate) fn cooldown(ctx: &Context, user: u64, global: u64) -> Option<Result<(
         __non_exhaustive: (),
     };
     match cooldown_tracker.remaining_cooldown((*ctx).cooldown_context(), &cooldown_durations) {
-        Some(remaining) => Some(Err(
-            format!("Please wait {} seconds", remaining.as_secs()).into()
-        )),
-        None => {
-            cooldown_tracker.start_cooldown((*ctx).cooldown_context());
-            None
-        }
+        Some(remaining) => Err(format!("Please wait {} seconds", remaining.as_secs()).into()),
+        None => Ok(cooldown_tracker.start_cooldown((*ctx).cooldown_context())),
     }
 }

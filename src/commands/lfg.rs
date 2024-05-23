@@ -1,14 +1,13 @@
+use poise::{ChoiceParameter, CreateReply};
+use serenity::all::CreateAllowedMentions;
+
+//from main.rs
+use crate::{Context, Error};
+use crate::commands::command_helper::cooldown;
 //
 use crate::commands::lfg::Difficulty::Normal;
 use crate::commands::lfg::Map::*;
 use crate::commands::lfg::Mode::*;
-//from main.rs
-use crate::{Context, Error};
-//
-use crate::commands::command_helper;
-use poise::ChoiceParameter;
-use serenity::model::mention::Mention;
-use serenity::model::mention::Mention::Role;
 
 #[derive(Debug, poise::ChoiceParameter, PartialEq)]
 pub enum Map {
@@ -29,8 +28,8 @@ pub enum Mode {
     Challenge,
     #[name = "Challenge of the week"]
     Event,
-    #[name = "Tournament Practice"]
-    Tournament
+    //#[name = "Tournament Practice"]
+    //Tournament,
 }
 #[derive(Debug, poise::ChoiceParameter)]
 pub enum Difficulty {
@@ -71,52 +70,61 @@ pub(crate) async fn lfg(
     #[rename = "message"]
     note: Option<String>,
 ) -> Result<(), Error> {
-    if let Some(value) = command_helper::cooldown(&ctx, 600, 300) {
-        return value;
-    }
 
-    let current = current_players.unwrap_or(1);
-    let mut desired = desired_players.unwrap_or(4);
-    if current >= desired {
-        desired = 4
-    }
-    let map_name: &str = map.name();
-    let ping: Mention;
-    match mode {
-        Casual => match map {
-            DeadEnd => ping = Role(1005837123921915914.into()),
-            BadBlood => ping = Role(1140190470698438666.into()),
-            AlienArcadium => ping = Role(1105917281898336356.into()),
+    let mut reply = CreateReply::default();
+
+    reply = match cooldown(&ctx, 600, 300) {
+        Ok(_) => {
+            let current = current_players.unwrap_or(1);
+            let mut desired = desired_players.unwrap_or(4);
+            if current >= desired {
+                desired = 4
+            }
+            let map_name: &str = map.name();
+            let ping = match mode {
+                Casual => match map {
+                    DeadEnd => 1005837123921915914,
+                    BadBlood => 1140190470698438666,
+                    AlienArcadium => 1105917281898336356,
+                },
+                Speedrun => 1005836989595144243,
+                Challenge => 1005836864680361994,
+                Event => 1175116511095050331,
+                //Tournament => 1210508966036242445,
+            };
+            let difficulty = match map {
+                DeadEnd => difficulty.unwrap_or(Normal),
+                BadBlood => difficulty.unwrap_or(Normal),
+                AlienArcadium => Normal,
+            };
+
+            let mut reply_content = format!(
+                "<@&{ping}> {current}/{desired} {map_name}",
+            );
+            match difficulty {
+                Normal => {},
+                Difficulty::Hard | Difficulty::Rip => {
+                    reply_content.push(' ');
+                    reply_content.push_str(difficulty.name());
+                }
+            }
+            match note {
+                None => {},
+                Some(note) => {
+                    reply_content.push_str(format!("\nNote: {note}").as_str());
+                }
+            }
+            reply.content(reply_content)
+                .ephemeral(false)
+                .allowed_mentions(CreateAllowedMentions::new()
+                    .roles(vec![ping])
+                )
         },
-        Speedrun => ping = Role(1005836989595144243.into()),
-        Challenge => ping = Role(1005836864680361994.into()),
-        Event => ping = Role(1175116511095050331.into()),
-        Tournament => ping = Role(1210508966036242445.into()),
-    }
-    let diff_name: &str = if map != AlienArcadium {
-        difficulty.unwrap_or(Normal).name()
-    } else {
-        Normal.name()
+        Err(why) => reply.content(why.to_string()).ephemeral(true),
     };
 
-    let mut reply = format!(
-        "{c}/{d} {e} {f} {b}",
-        b = ping,
-        c = current,
-        d = desired,
-        e = map_name,
-        f = diff_name
-    );
-
-    if note.is_some() {
-        let t = note.unwrap();
-        let regex = regex::Regex::new("(<@&?[0-9]*>)|(@everyone|@here)").unwrap();
-        if regex.is_match(&t) {
-            reply = String::from("Your Note seems to match a ping <:Maark:1128577127931985950>");
-        } else {
-            reply.push_str(format!("\nNote: {}", t).as_str());
-        }
+    if let Err(why) = ctx.send(reply).await {
+        println!("Error sending message: {why}");
     }
-
-    command_helper::send(ctx, reply).await
+    Ok(())
 }

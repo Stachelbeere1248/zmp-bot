@@ -1,12 +1,17 @@
-mod commands;
-
-use poise::{async_trait, serenity_prelude as serenity};
-use serenity::{client::EventHandler, model::id::UserId, FullEvent};
 use std::collections::HashSet;
 use std::convert::Into;
-use serenity::all::{ActivityData};
+use std::sync::Arc;
 
-struct Data {} // User data, which is stored and accessible in all command invocations
+use poise::{async_trait, serenity_prelude as serenity};
+use serenity::{client::EventHandler, FullEvent, model::id::UserId};
+use serenity::all::ActivityData;
+use tokio::sync::RwLock;
+
+mod commands;
+
+struct Data {
+    bots: Arc<RwLock<u8>>
+} // User data, which is stored and accessible in all command invocations
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
 struct ReadyHandler;
@@ -39,13 +44,6 @@ async fn main() {
         on_error: |error| {
             Box::pin(async move {
                 match error {
-                    poise::FrameworkError::ArgumentParse { error, .. } => {
-                        if let Some(error) = error.downcast_ref::<serenity::RoleParseError>() {
-                            println!("Found a RoleParseError: {:?}", error);
-                        } else {
-                            println!("Not a RoleParseError :(");
-                        }
-                    }
                     other => poise::builtins::on_error(other).await.unwrap(),
                 }
             })
@@ -62,7 +60,9 @@ async fn main() {
         .setup(move |ctx, _ready, framework| {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                Ok(Data {})
+                Ok(Data {
+                    bots: Arc::new(RwLock::new(0)),
+                })
             })
         })
         .build();
