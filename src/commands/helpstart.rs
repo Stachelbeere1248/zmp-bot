@@ -1,4 +1,5 @@
 use poise::CreateReply;
+use serenity::all::CreateAllowedMentions;
 
 use crate::{Context, Error};
 use crate::commands::command_helper;
@@ -27,7 +28,10 @@ pub(crate) async fn helpstart(
                     "<@&1008075054971621448>\nneed: {}",
                     needed_players - bots
                 ))
-                .ephemeral(false),
+                .ephemeral(false)
+                .allowed_mentions(CreateAllowedMentions::new()
+                    .roles(vec![1008075054971621448])
+                ),
             Err(why) => reply.content(why.to_string()).ephemeral(true),
         }
     };

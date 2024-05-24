@@ -32,6 +32,7 @@ async fn main() {
     let options = poise::FrameworkOptions {
         commands: vec![
             commands::lfg::lfg(),
+            commands::lfg::expert(),
             commands::xd::xd(),
             commands::helpstart::helpstart(),
             commands::bots::bots(),
