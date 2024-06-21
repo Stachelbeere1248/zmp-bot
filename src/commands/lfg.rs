@@ -17,6 +17,8 @@ pub enum Map {
     BadBlood,
     #[name = "Alien Arcadium"]
     AlienArcadium,
+    #[name = "Prison"]
+    Prison,
 }
 #[derive(Debug, poise::ChoiceParameter)]
 pub enum Mode {
@@ -85,6 +87,7 @@ pub(crate) async fn lfg(
                     DeadEnd => 1005837123921915914,
                     BadBlood => 1140190470698438666,
                     AlienArcadium => 1105917281898336356,
+                    Prison => 1253440747454333009,
                 },
                 Speedrun => 1005836989595144243,
                 Challenge => 1005836864680361994,
@@ -92,8 +95,7 @@ pub(crate) async fn lfg(
                 //Tournament => 1210508966036242445,
             };
             let difficulty: Difficulty = match map {
-                DeadEnd => difficulty.unwrap_or(Normal),
-                BadBlood => difficulty.unwrap_or(Normal),
+                DeadEnd | BadBlood | Prison => difficulty.unwrap_or(Normal),
                 AlienArcadium => Normal,
             };
 
