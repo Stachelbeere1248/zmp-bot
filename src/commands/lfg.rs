@@ -1,5 +1,5 @@
 use poise::{ChoiceParameter, CreateReply};
-use serenity::all::{CreateAllowedMentions, RoleId};
+use serenity::all::{CreateAllowedMentions, GuildId, RoleId};
 
 //from main.rs
 use crate::commands::command_helper::cooldown;
@@ -73,7 +73,7 @@ pub(crate) async fn lfg(
     note: Option<String>,
 ) -> Result<(), Error> {
     let mut reply: CreateReply = CreateReply::default();
-
+    let guild_id = ctx.guild_id().unwrap().get();
     reply = match cooldown(&ctx, 600, 300) {
         Ok(_) => {
             let current: u8 = current_players.unwrap_or(1);
@@ -82,7 +82,7 @@ pub(crate) async fn lfg(
                 desired = 4
             }
             let map_name: &str = map.name();
-            let ping: u64 = match mode {
+            let old_ping: u64 = match mode {
                 Casual => match map {
                     DeadEnd => 1005837123921915914,
                     BadBlood => 1140190470698438666,
@@ -93,6 +93,23 @@ pub(crate) async fn lfg(
                 Challenge => 1005836864680361994,
                 Event => 1175116511095050331,
                 //Tournament => 1210508966036242445,
+            };
+            let new_ping: u64 = match mode {
+                Casual => match map {
+                    DeadEnd => 1257408106783178752,
+                    BadBlood => 1257408198541836459,
+                    AlienArcadium => 1257408233757343815,
+                    Prison => 1257408303835644029,
+                },
+                Speedrun => 1257408362367287367,
+                Challenge => 1257408398631370762,
+                Event => 1257408432063905915,
+                //Tournament => 1210508966036242445,
+            };
+            let ping = match guild_id {
+                1256217633959841853 => new_ping,
+                995300932164276234 => old_ping,
+                _ => 0
             };
             let difficulty: Difficulty = match map {
                 DeadEnd | BadBlood | Prison => difficulty.unwrap_or(Normal),
@@ -169,6 +186,7 @@ pub(crate) async fn expert (
             if current >= desired {
                 desired = 4
             }
+            //TODO ZMPv2
             let (ping, allowed_roles): (u64, Vec<u64>) = match mode {
                 Expert::Speedrun => (
                     1243676538067488828,

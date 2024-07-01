@@ -8,7 +8,7 @@ pub(crate) async fn send_simple(ctx: Context<'_>, reply: String) -> Result<(), E
             content: Some(reply),
             embeds: vec![],
             attachments: vec![],
-            ephemeral: None,
+            ephemeral: Some(true),
             components: None,
             allowed_mentions: None,
             reply: false,
@@ -21,12 +21,12 @@ pub(crate) async fn send_simple(ctx: Context<'_>, reply: String) -> Result<(), E
     Ok(())
 }
 
-pub(crate) fn cooldown(ctx: &Context, user: u64, global: u64) -> Result<(), Error> {
+pub(crate) fn cooldown(ctx: &Context, user: u64, guild: u64) -> Result<(), Error> {
     let mut cooldown_tracker = ctx.command().cooldowns.lock().unwrap();
     let cooldown_durations = poise::CooldownConfig {
-        global: Some(Duration::from_secs(global)),
+        global: None,
         user: Some(Duration::from_secs(user)),
-        guild: None,
+        guild: Some(Duration::from_secs(guild)),
         channel: None,
         member: None,
         __non_exhaustive: (),
