@@ -6,13 +6,10 @@ use std::future::Future;
 use std::sync::Arc;
 use std::time::Duration;
 
-use poise::{async_trait, serenity_prelude as serenity};
-use serenity::all::Route::Channel;
-use serenity::all::{
-    ActivityData, Attachment, ChannelId, CreateAttachment, CreateMessage, Event, Guild,
-    GuildChannel,
-};
-use serenity::{client::EventHandler, model::id::UserId, FullEvent};
+use poise::serenity_prelude as serenity;
+use serenity::{client::EventHandler, FullEvent, model::id::UserId};
+use serenity::all::{ActivityData, RoleId};
+use serenity::prelude::GatewayIntents;
 use sqlx::{Acquire, ConnectOptions, Executor, Sqlite};
 use tokio::sync::RwLock;
 
@@ -92,7 +89,7 @@ async fn main() {
 
     let token = std::env::var("DISCORD_TOKEN").unwrap();
     let intents =
-        serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT;
+        serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT | GatewayIntents::GUILD_MEMBERS;
 
     let client = serenity::ClientBuilder::new(token, intents)
         .framework(framework)
@@ -101,7 +98,7 @@ async fn main() {
     client.unwrap().start().await.unwrap()
 }
 async fn event_handler(
-    _ctx: &serenity::Context,
+    ctx: &serenity::Context,
     event: &FullEvent,
     _framework: poise::FrameworkContext<'_, Data, Error>,
     _data: &Data,
@@ -109,7 +106,14 @@ async fn event_handler(
     match event {
         FullEvent::Ready { data_about_bot, .. } => {
             println!("Logged in as {}", data_about_bot.user.name);
-        }
+        },
+        FullEvent::GuildMemberAddition { new_member } => {
+            println!("join event");
+            if new_member.guild_id.get() == 1256217633959841853_u64 {
+                new_member.add_role(ctx, RoleId::new(1256253358701023232_u64)).await?;
+                println!("gave member role");
+            }
+        },
         _ => {}
     }
     Ok(())
