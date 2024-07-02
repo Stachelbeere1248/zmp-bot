@@ -82,8 +82,8 @@ async fn link(discord_id: u64, uuid: &str, pool: &Pool<Sqlite>) {
                 .await
                 .unwrap_or(u16::MAX)
                 .cast_signed();
-            let _ = sqlx::query(format!("UPDATE minecraft_links SET link_id = {} WHERE link_id = {new_link_id_discord};", link_id_mc_old.cast_signed()).as_str()).execute(pool).await;
-            let _ = sqlx::query(
+            sqlx::query(format!("UPDATE minecraft_links SET link_id = {} WHERE link_id = {new_link_id_discord};", link_id_mc_old.cast_signed()).as_str()).execute(pool).await.expect("Database Error: linking previously linked accounts by another user");
+            sqlx::query(
                 format!(
                     "UPDATE discord_links SET link_id = {} WHERE link_id = {new_link_id_discord};",
                     link_id_mc_old.cast_signed()
@@ -91,23 +91,23 @@ async fn link(discord_id: u64, uuid: &str, pool: &Pool<Sqlite>) {
                 .as_str(),
             )
             .execute(pool)
-            .await;
+            .await.expect("Database Error: linking previously linked accounts by another user");
             link_id_mc_old
         }
     };
 
     let link_id = link_id.cast_signed();
     let discord_id = discord_id.cast_signed();
-    let _ = sqlx::query(
+    sqlx::query(
         format!("INSERT INTO minecraft_links VALUES ({link_id}, \"{uuid}\");").as_str(),
     )
     .execute(pool)
-    .await;
-    let _ = sqlx::query(
+    .await.expect("Database Error: inserting new minecraft value");
+    sqlx::query(
         format!("INSERT INTO discord_links VALUES ({link_id}, \"{discord_id}\");").as_str(),
     )
     .execute(pool)
-    .await;
+    .await.expect("Database Error: inserting new discord value");
 }
 
 #[derive(Serialize, Deserialize)]
@@ -140,7 +140,7 @@ struct MojangPlayer {
 
 async fn minecraft_uuid_for_username(name: String) -> Result<String, serde_json::Error> {
     let url = format!("https://api.mojang.com/users/profiles/minecraft/{name}");
-    let response = reqwest::get(url).await.unwrap();
+    let response = reqwest::get(url).await.expect(format!("Failed retrieving hypixel response for {name}").as_str());
     let response_text = response.text().await.unwrap();
     return (serde_json::from_str(response_text.as_str())
         as Result<MojangPlayer, serde_json::Error>)
@@ -191,7 +191,7 @@ async fn link_id_from_discord(pool: &Pool<Sqlite>, snowflake: u64) -> Option<u16
     )
     .fetch_optional(pool)
     .await
-    .unwrap()
+    .expect("Database error: fetching link id by discord")
     .map(|discord_link: DiscordLink| discord_link.link_id.cast_unsigned());
 }
 async fn link_id_from_minecraft(pool: &Pool<Sqlite>, minecraft_uuid: String) -> Option<u16> {
@@ -203,7 +203,7 @@ async fn link_id_from_minecraft(pool: &Pool<Sqlite>, minecraft_uuid: String) -> 
     )
     .fetch_optional(pool)
     .await
-    .unwrap()
+    .expect("Database error: fetching link id by uuid")
     .map(|minecraft_link: MinecraftLink| minecraft_link.link_id.cast_unsigned());
 }
 
@@ -211,7 +211,9 @@ async fn new_link_id(pool: &Pool<Sqlite>) -> u16 {
     let result: Result<LinkId, sqlx::Error> = query_as("SELECT link_id FROM minecraft_links WHERE link_id = (SELECT MAX(link_id) FROM minecraft_links) LIMIT 1;")
         .fetch_one(pool)
         .await;
-    result.unwrap().link_id.cast_unsigned() + 1
+    result
+        .expect("Database error: fetching new id")
+        .link_id.cast_unsigned() + 1
 }
 
 async fn minecraft_uuids(pool: &Pool<Sqlite>, link_id: u16) -> Vec<String> {

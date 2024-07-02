@@ -28,7 +28,6 @@ struct ReadyHandler;
 async fn main() {
     let sqlite_pool = sqlx::sqlite::SqlitePoolOptions::new()
         .idle_timeout(Duration::from_secs(10))
-        .max_connections(3)
         .connect_lazy("sqlite:accounts.db")
         .unwrap();
 
@@ -89,7 +88,7 @@ async fn main() {
 
     let token = std::env::var("DISCORD_TOKEN").unwrap();
     let intents =
-        serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT | GatewayIntents::GUILD_MEMBERS;
+        GatewayIntents::non_privileged() | GatewayIntents::MESSAGE_CONTENT | GatewayIntents::GUILD_MEMBERS;
 
     let client = serenity::ClientBuilder::new(token, intents)
         .framework(framework)
