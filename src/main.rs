@@ -2,15 +2,14 @@
 
 use std::collections::HashSet;
 use std::convert::Into;
-use std::future::Future;
 use std::sync::Arc;
 use std::time::Duration;
 
 use poise::serenity_prelude as serenity;
-use serenity::{client::EventHandler, FullEvent, model::id::UserId};
+use serenity::{FullEvent, model::id::UserId};
 use serenity::all::{ActivityData, RoleId};
 use serenity::prelude::GatewayIntents;
-use sqlx::{Acquire, ConnectOptions, Executor, Sqlite};
+use sqlx::{Sqlite};
 use tokio::sync::RwLock;
 
 mod commands;
@@ -22,8 +21,6 @@ struct Data {
 } // User data, which is stored and accessible in all command invocations
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
-struct ReadyHandler;
-
 #[tokio::main]
 async fn main() {
     let sqlite_pool = sqlx::sqlite::SqlitePoolOptions::new()
@@ -89,12 +86,11 @@ async fn main() {
     let token = std::env::var("DISCORD_TOKEN").unwrap();
     let intents =
         GatewayIntents::non_privileged() | GatewayIntents::MESSAGE_CONTENT | GatewayIntents::GUILD_MEMBERS;
-
     let client = serenity::ClientBuilder::new(token, intents)
         .framework(framework)
         .activity(ActivityData::playing("arcade_zombies_prison"))
         .await;
-    client.unwrap().start().await.unwrap()
+    client.unwrap().start_autosharded().await.unwrap()
 }
 async fn event_handler(
     ctx: &serenity::Context,

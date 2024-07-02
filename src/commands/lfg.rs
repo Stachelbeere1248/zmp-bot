@@ -1,5 +1,5 @@
 use poise::{ChoiceParameter, CreateReply};
-use serenity::all::{CreateAllowedMentions, GuildId, RoleId};
+use serenity::all::{CreateAllowedMentions, RoleId};
 
 //from main.rs
 use crate::commands::command_helper::cooldown;
