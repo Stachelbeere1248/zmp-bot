@@ -1,8 +1,8 @@
 use poise::CreateReply;
 use serde::{Deserialize, Serialize};
-use serenity::all::User;
+use serenity::all::{ChannelId, CreateMessage, User};
+use serenity::builder::CreateAllowedMentions;
 use sqlx::{query_as, Executor, Pool, Sqlite};
-
 use crate::{Context, Error};
 
 #[poise::command(slash_command, subcommands("add", "list"))]
@@ -11,30 +11,32 @@ pub(crate) async fn account(_ctx: Context<'_>) -> Result<(), Error> {
 }
 
 #[poise::command(slash_command)]
-pub(crate) async fn add(ctx: Context<'_>, ign: String, user: Option<User>) -> Result<(), Error> {
-    let user_id = user.clone().map(|user| user.id.get());
-    let user_name = user.clone().map(|user| user.name);
-    let author_name = ctx.author().name.clone();
+pub(crate) async fn add(ctx: Context<'_>, ign: String) -> Result<(), Error> {
     let pool = ctx.data().sqlite_pool.clone();
-    let minecraft_uuid = minecraft_uuid_for_username(ign).await?;
+    let minecraft_uuid = minecraft_uuid_for_username(ign.clone()).await?;
     let hypixel_linked_discord = linked_discord_for_uuid(
         ctx.data().hypixel_api_client.clone(),
         minecraft_uuid.as_str(),
     )
     .await?;
-    if hypixel_linked_discord.eq(&user_name.unwrap_or(author_name)) {
+    if hypixel_linked_discord.eq(ctx.author().name.as_str()) {
         link(
-            user_id.unwrap_or(ctx.author().id.get()),
+            ctx.author().id.get(),
             minecraft_uuid.as_str(),
             &pool,
         )
         .await;
-        if let Err(why) = ctx
-            .send(CreateReply::default().content("Linked accounts."))
-            .await
-        {
-            println!("Error sending message: {why}");
-        }
+        let s = format!("## User <@{}> added an account:\n### added:\n- name: {}\n- uuid: {}",
+                        ctx.author().id.get(),
+                        ign.clone(),
+                        minecraft_uuid
+        );
+        ChannelId::new(1257776992497959075).send_message(ctx,
+            CreateMessage::new()
+                .content(s)
+                .allowed_mentions(CreateAllowedMentions::new().empty_roles().empty_users())
+        ).await?;
+        ctx.send(CreateReply::default().content("Linked accounts.")).await?;
     }
     Ok(())
 }
@@ -57,7 +59,10 @@ pub(crate) async fn list(ctx: Context<'_>, user: Option<User>) -> Result<(), Err
         Some(id) => minecraft_uuids(&pool, id).await,
         None => Vec::new(),
     };
-    let mut content = format!("## {}'s linked accounts: ", user_name.unwrap_or(author_name));
+    let mut content = format!(
+        "## {}'s linked accounts: ",
+        user_name.unwrap_or(author_name)
+    );
     for l in t {
         content.push_str(format!("\nuuid: {}", l).as_str())
     }
@@ -201,6 +206,7 @@ async fn link_id_from_minecraft(pool: &Pool<Sqlite>, minecraft_uuid: String) -> 
     .unwrap()
     .map(|minecraft_link: MinecraftLink| minecraft_link.link_id.cast_unsigned());
 }
+
 async fn new_link_id(pool: &Pool<Sqlite>) -> u16 {
     let result: Result<LinkId, sqlx::Error> = query_as("SELECT link_id FROM minecraft_links WHERE link_id = (SELECT MAX(link_id) FROM minecraft_links) LIMIT 1;")
         .fetch_one(pool)

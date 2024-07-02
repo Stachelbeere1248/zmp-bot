@@ -1,8 +1,8 @@
 use poise::CreateReply;
 use serenity::all::CreateAllowedMentions;
 
-use crate::{Context, Error};
 use crate::commands::command_helper;
+use crate::{Context, Error};
 
 #[poise::command(slash_command, guild_only)]
 pub(crate) async fn helpstart(
@@ -29,9 +29,7 @@ pub(crate) async fn helpstart(
                     needed_players - bots
                 ))
                 .ephemeral(false)
-                .allowed_mentions(CreateAllowedMentions::new()
-                    .roles(vec![1008075054971621448])
-                ),
+                .allowed_mentions(CreateAllowedMentions::new().roles(vec![1008075054971621448])),
             Err(why) => reply.content(why.to_string()).ephemeral(true),
         }
     };

@@ -7,9 +7,12 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use poise::{async_trait, serenity_prelude as serenity};
-use serenity::{client::EventHandler, FullEvent, model::id::UserId};
-use serenity::all::{ActivityData, Attachment, ChannelId, CreateAttachment, CreateMessage, Event, Guild, GuildChannel};
 use serenity::all::Route::Channel;
+use serenity::all::{
+    ActivityData, Attachment, ChannelId, CreateAttachment, CreateMessage, Event, Guild,
+    GuildChannel,
+};
+use serenity::{client::EventHandler, model::id::UserId, FullEvent};
 use sqlx::{Acquire, ConnectOptions, Executor, Sqlite};
 use tokio::sync::RwLock;
 
@@ -18,7 +21,7 @@ mod commands;
 struct Data {
     bots: Arc<RwLock<u8>>,
     sqlite_pool: sqlx::Pool<Sqlite>,
-    hypixel_api_client: reqwest::Client
+    hypixel_api_client: reqwest::Client,
 } // User data, which is stored and accessible in all command invocations
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
@@ -26,12 +29,11 @@ struct ReadyHandler;
 
 #[tokio::main]
 async fn main() {
-
-
     let sqlite_pool = sqlx::sqlite::SqlitePoolOptions::new()
         .idle_timeout(Duration::from_secs(10))
         .max_connections(3)
-        .connect_lazy("sqlite:accounts.db").unwrap();
+        .connect_lazy("sqlite:accounts.db")
+        .unwrap();
 
     let hypixel_api: String = std::env::var("HYPIXEL_API_KEY").unwrap();
     let hypixel_api_client = {
@@ -42,9 +44,9 @@ async fn main() {
         );
         reqwest::ClientBuilder::new()
             .default_headers(headers)
-            .build().unwrap()
+            .build()
+            .unwrap()
     };
-
 
     let options = poise::FrameworkOptions {
         commands: vec![
@@ -82,7 +84,7 @@ async fn main() {
                 Ok(Data {
                     bots: Arc::new(RwLock::new(0)),
                     sqlite_pool,
-                    hypixel_api_client
+                    hypixel_api_client,
                 })
             })
         })
@@ -107,7 +109,7 @@ async fn event_handler(
     match event {
         FullEvent::Ready { data_about_bot, .. } => {
             println!("Logged in as {}", data_about_bot.user.name);
-        },
+        }
         _ => {}
     }
     Ok(())

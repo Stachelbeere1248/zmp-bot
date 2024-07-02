@@ -109,7 +109,7 @@ pub(crate) async fn lfg(
             let ping = match guild_id {
                 1256217633959841853 => new_ping,
                 995300932164276234 => old_ping,
-                _ => 0
+                _ => 0,
             };
             let difficulty: Difficulty = match map {
                 DeadEnd | BadBlood | Prison => difficulty.unwrap_or(Normal),
@@ -155,11 +155,10 @@ enum Expert {
     Speedrun,
 }
 #[poise::command(slash_command, guild_only, rename = "expert-lfg")]
-pub(crate) async fn expert (
+pub(crate) async fn expert(
     ctx: Context<'_>,
 
-    #[rename = "map"]
-    mode: Expert,
+    #[rename = "map"] mode: Expert,
 
     #[min = 1_u8]
     #[max = 3_u8]
