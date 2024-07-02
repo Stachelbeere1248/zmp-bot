@@ -12,6 +12,7 @@ pub(crate) async fn account(_ctx: Context<'_>) -> Result<(), Error> {
 
 #[poise::command(slash_command)]
 pub(crate) async fn add(ctx: Context<'_>, ign: String) -> Result<(), Error> {
+    ctx.defer_ephemeral().await?;
     let pool = ctx.data().sqlite_pool.clone();
     let minecraft_uuid = minecraft_uuid_for_username(ign.clone()).await?;
     let hypixel_linked_discord = linked_discord_for_uuid(
@@ -49,6 +50,7 @@ pub(crate) async fn remove(ctx: Context<'_>) -> Result<(), Error> {
 
 #[poise::command(slash_command)]
 pub(crate) async fn list(ctx: Context<'_>, user: Option<User>) -> Result<(), Error> {
+    ctx.defer_ephemeral().await?;
     let user_id = user.clone().map(|user| user.id.get());
     let user_name = user.clone().map(|user| user.name);
     let author_name = ctx.author().name.clone();

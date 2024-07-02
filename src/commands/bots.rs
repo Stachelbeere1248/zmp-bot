@@ -10,6 +10,7 @@ pub(crate) async fn bots(
     #[description = "default: 0"]
     bots: u8,
 ) -> Result<(), Error> {
+    ctx.defer_ephemeral().await?;
     *ctx.data().bots.write().await = bots;
     let reply = format!("{} bots are now registered as available", bots).to_string();
     command_helper::send_simple(ctx, reply).await

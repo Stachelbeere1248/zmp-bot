@@ -13,6 +13,7 @@ pub(crate) async fn helpstart(
     #[rename = "current"]
     current_players: u8,
 ) -> Result<(), Error> {
+    ctx.defer_ephemeral().await?;
     let needed_players = 4 - current_players;
     let bots = *ctx.data().bots.read().await;
 

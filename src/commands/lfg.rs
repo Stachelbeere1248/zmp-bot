@@ -72,6 +72,7 @@ pub(crate) async fn lfg(
     #[rename = "message"]
     note: Option<String>,
 ) -> Result<(), Error> {
+    ctx.defer_ephemeral().await?;
     let mut reply: CreateReply = CreateReply::default();
     let guild_id = ctx.guild_id().unwrap().get();
     reply = match cooldown(&ctx, 600, 300) {
