@@ -13,11 +13,15 @@ pub(crate) async fn helpstart(
     #[rename = "current"]
     current_players: u8,
 ) -> Result<(), Error> {
-    ctx.defer_ephemeral().await?;
     let needed_players = 4 - current_players;
     let bots = *ctx.data().bots.read().await;
-
+    let g = ctx.guild_id().unwrap().get();
     let mut reply = CreateReply::default();
+    let ping = match g {
+        1256217633959841853_u64 => 1257411572092113017_u64,
+        995300932164276234_u64 => 1008075054971621448_u64,
+        _ => 0_u64
+    };
 
     reply = if bots >= needed_players {
         reply.content("Bots available. Please use <@424767825001971715> in the bot-commands channel instead.")
@@ -26,7 +30,7 @@ pub(crate) async fn helpstart(
         match command_helper::cooldown(&ctx, 1200, 600) {
             Ok(_) => reply
                 .content(format!(
-                    "<@&1008075054971621448>\nneed: {}",
+                    "<@&{ping}>\nneed: {}",
                     needed_players - bots
                 ))
                 .ephemeral(false)

@@ -2,7 +2,8 @@ use poise::CreateReply;
 use serde::{Deserialize, Serialize};
 use serenity::all::{ChannelId, CreateMessage, User};
 use serenity::builder::CreateAllowedMentions;
-use sqlx::{query_as, Pool, Sqlite};
+use sqlx::{Pool, query_as, Sqlite};
+
 use crate::{Context, Error};
 
 #[poise::command(slash_command, subcommands("add", "list"))]
