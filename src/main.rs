@@ -7,12 +7,13 @@ use std::time::Duration;
 
 use poise::serenity_prelude as serenity;
 use serenity::{FullEvent, model::id::UserId};
-use serenity::all::{ActivityData, RoleId};
+use serenity::all::{ActivityData, InteractionType, RoleId};
 use serenity::prelude::GatewayIntents;
 use sqlx::{Sqlite};
 use tokio::sync::RwLock;
 
 mod commands;
+mod handlers;
 
 struct Data {
     bots: Arc<RwLock<u8>>,
@@ -109,6 +110,12 @@ async fn event_handler(
                 println!("gave member role");
             }
         },
+        FullEvent::InteractionCreate {interaction} => {
+            if interaction.application_id().get() == 1165594074473037824
+                && interaction.kind() == InteractionType::Component {
+                handlers::bot_interaction::component(ctx, interaction).await?;
+            }
+        }
         _ => {}
     }
     Ok(())

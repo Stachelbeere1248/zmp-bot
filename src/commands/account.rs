@@ -1,6 +1,6 @@
 use poise::CreateReply;
 use serde::{Deserialize, Serialize};
-use serenity::all::{ChannelId, CreateMessage, User};
+use serenity::all::{ChannelId, CreateActionRow, CreateButton, CreateMessage, ReactionType, User};
 use serenity::builder::CreateAllowedMentions;
 use sqlx::{Pool, query_as, Sqlite};
 
@@ -36,7 +36,11 @@ pub(crate) async fn add(ctx: Context<'_>, ign: String) -> Result<(), Error> {
         ChannelId::new(1257776992497959075).send_message(ctx,
             CreateMessage::new()
                 .content(s)
-                .allowed_mentions(CreateAllowedMentions::new().empty_roles().empty_users())
+                .allowed_mentions(CreateAllowedMentions::new().empty_roles().all_users(true))
+                .components(vec![CreateActionRow::Buttons(vec![
+                    CreateButton::new("accept_verification").emoji(ReactionType::from('✅')),
+                    CreateButton::new("deny_verification").emoji(ReactionType::from('❌')),
+                ])])
         ).await?;
         ctx.send(CreateReply::default().content("Linked accounts.")).await?;
     }
