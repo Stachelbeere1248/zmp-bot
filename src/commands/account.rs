@@ -43,6 +43,8 @@ pub(crate) async fn add(ctx: Context<'_>, ign: String) -> Result<(), Error> {
                 ])])
         ).await?;
         ctx.send(CreateReply::default().content("Linked accounts.")).await?;
+    } else {
+        ctx.send(CreateReply::default().content("This Minecraft account's link doesn't seem to match your discord username. Be sure to not link using the display name and remove the @.")).await?;
     }
     Ok(())
 }
