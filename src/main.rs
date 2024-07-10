@@ -49,7 +49,7 @@ async fn main() {
             commands::xd::xd(),
             commands::helpstart::helpstart(),
             commands::bots::bots(),
-            commands::account::account(),
+            commands::accountv2::account(),
         ],
         manual_cooldowns: true,
         prefix_options: poise::PrefixFrameworkOptions {
@@ -59,6 +59,7 @@ async fn main() {
         on_error: |error| {
             Box::pin(async move {
                 match error {
+
                     other => poise::builtins::on_error(other).await.unwrap(),
                 }
             })
