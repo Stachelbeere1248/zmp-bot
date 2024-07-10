@@ -1,5 +1,5 @@
 use poise::CreateReply;
-use reqwest::Response;
+use reqwest::{Client, Response};
 use serde::Deserialize;
 use serenity::{
     all::{
@@ -39,7 +39,7 @@ struct HypixelResponse {
 #[derive(Deserialize)]
 struct MojangPlayer {
     pub id: String,
-    pub name: String,
+    //pub name: String,
 }
 
 #[derive(PartialEq, sqlx::FromRow)]
@@ -47,12 +47,6 @@ struct Uuid {
     uuid: String
 }
 impl Uuid {
-    fn new(uuid: &str) -> Self {
-        let uuid: String = uuid.to_string();
-        Uuid {
-            uuid
-        }
-    }
     fn get(&self) -> &str {
         self.uuid.as_str()
     }
@@ -78,25 +72,15 @@ struct DiscordId {
     id: u64
 }
 impl DiscordId {
-    fn new(id: u64) -> Self {
-        DiscordId {
-            id
-        }
-    }
-    fn new_from_unsigned(id: i64) -> Self {
-        DiscordId {
-            id: id.cast_unsigned()
-        }
-    }
-    async fn matches_fetch(user: &User, uuid: &str) -> Result<bool, Error> {
+    async fn matches_fetch(user: &User, uuid: &str, client: &Client) -> Result<bool, Error> {
         let url: String = format!("https://api.hypixel.net/v2/player?uuid={}", uuid);
-        let response: Response = reqwest::get(url).await?;
+        let response: Response = client.get(url).send().await?;
         match response.error_for_status() {
             Ok(res) => {
                 let response_text = res.text().await.unwrap();
                 let matches = (serde_json::from_str(response_text.as_str())
-                    as Result<HypixelPlayer, JsonError>)
-                    .map(|hypixel_player: HypixelPlayer| user.name == hypixel_player.social_media.links.discord)?;
+                    as Result<HypixelResponse, JsonError>)
+                    .map(|hypixel_response: HypixelResponse| user.name == hypixel_response.player.social_media.links.discord)?;
                 Ok(matches)
             },
             Err(why) => {
@@ -164,7 +148,7 @@ pub(crate) async fn add<'a>(
     ctx.defer_ephemeral().await?;
     let user = user.unwrap_or(ctx.author().clone());
     let uuid = Uuid::fetch(ign.as_str()).await?;
-    let valid = DiscordId::matches_fetch(&user, uuid.get()).await
+    let valid = DiscordId::matches_fetch(&user, uuid.get(), &ctx.data().hypixel_api_client).await
         .expect("This Minecraft account does not have a Discord account linked.");
     match valid {
         true => {
@@ -260,39 +244,27 @@ async fn list_string(link: Link, user_id: u64) -> String {
     format!("## Account list for <@{user_id}>:\n{}\n{}", discord_list.as_str(), minecraft_list.as_str())
 }
 
-#[derive(sqlx::FromRow)]
-struct MinecraftLink {
-    link_id: i16,
-    minecraft_uuid: String,
-}
-
 async fn link_id_from_minecraft(pool: &Pool<Sqlite>, minecraft_uuid: &str) -> Option<u16> {
     return query_as(
         format!(
-            "SELECT * FROM minecraft_links WHERE minecraft_uuid = \"{minecraft_uuid}\" LIMIT 1;"
+            "SELECT link_id FROM minecraft_links WHERE minecraft_uuid = \"{minecraft_uuid}\" LIMIT 1;"
         )
             .as_str(),
     )
         .fetch_optional(pool)
         .await
         .expect("Database error: fetching link id by uuid")
-        .map(|minecraft_link: MinecraftLink| minecraft_link.link_id.cast_unsigned());
-}
-
-#[derive(sqlx::FromRow)]
-struct DiscordLink {
-    link_id: i16,
-    discord_id: i64,
+        .map(|link_id: LinkId| link_id.link_id.cast_unsigned());
 }
 async fn link_id_from_discord(pool: &Pool<Sqlite>, snowflake: u64) -> Option<u16> {
     let discord_id: i64 = snowflake.cast_signed();
     return query_as(
-        format!("SELECT * FROM discord_links WHERE discord_id = {discord_id} LIMIT 1;").as_str(),
+        format!("SELECT link_id FROM discord_links WHERE discord_id = {discord_id} LIMIT 1;").as_str(),
     )
         .fetch_optional(pool)
         .await
         .expect("Database error: fetching link id by discord")
-        .map(|discord_link: DiscordLink| discord_link.link_id.cast_unsigned());
+        .map(|link_id: LinkId| link_id.link_id.cast_unsigned());
 }
 
 #[derive(sqlx::FromRow)]
