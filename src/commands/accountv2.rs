@@ -239,7 +239,7 @@ async fn list_string(link: Link, user_id: u64) -> String {
     }
     let mut minecraft_list = String::from("### Minecraft:");
     for mc in link.minecraft_accounts {
-        minecraft_list.push_str(format!("\n- `{}`>", mc.get()).as_str());
+        minecraft_list.push_str(format!("\n- `{}`", mc.get()).as_str());
     }
     format!("## Account list for <@{user_id}>:\n{}\n{}", discord_list.as_str(), minecraft_list.as_str())
 }

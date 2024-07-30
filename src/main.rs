@@ -64,7 +64,7 @@ async fn main() {
                 }
             })
         },
-        owners: { HashSet::from([UserId::new(449579075531440128_u64)]) },
+        owners: { HashSet::from([UserId::new(449579075531440128_u64),UserId::new(659112817508745216_u64)]) },
         event_handler: |_ctx, event, _framework, _data| {
             Box::pin(event_handler(_ctx, event, _framework, _data))
         },
