@@ -34,7 +34,7 @@ pub(crate) async fn helpstart(
                     needed_players - bots
                 ))
                 .ephemeral(false)
-                .allowed_mentions(CreateAllowedMentions::new().roles(vec![1008075054971621448])),
+                .allowed_mentions(CreateAllowedMentions::new().roles(vec![ping])),
             Err(why) => reply.content(why.to_string()).ephemeral(true),
         }
     };
