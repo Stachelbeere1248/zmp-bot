@@ -1,7 +1,7 @@
 use serenity::all::{ComponentInteraction, ComponentInteractionDataKind, Context, CreateMessage, EditMessage, GuildId, Interaction, RoleId};
 use crate::Error;
 
-pub(crate) async fn component(ctx: &Context, interaction: &Interaction) -> Result<(), Error>{
+pub(crate) async fn component(ctx: &Context, interaction: &Interaction) -> Result<(), Error> {
     let component = interaction.clone().message_component().unwrap();
     match component.data.kind {
         ComponentInteractionDataKind::Button => button(ctx, component, ).await,
@@ -9,7 +9,7 @@ pub(crate) async fn component(ctx: &Context, interaction: &Interaction) -> Resul
     }
 }
 
-async fn button(ctx: &Context, mut component: ComponentInteraction) -> Result<(), Error>{
+async fn button(ctx: &Context, mut component: ComponentInteraction) -> Result<(), Error> {
     let m = component.message.clone();
     let u = m.mentions.first().expect("Message did not mention a user.");
     match component.data.custom_id.as_str() {

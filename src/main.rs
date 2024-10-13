@@ -116,6 +116,9 @@ async fn event_handler(
                 && interaction.kind() == InteractionType::Component {
                 handlers::bot_interaction::component(ctx, interaction).await?;
             }
+        },
+        FullEvent::Message { new_message } => {
+            handlers::message::create(ctx, new_message).await?;
         }
         _ => {}
     }
