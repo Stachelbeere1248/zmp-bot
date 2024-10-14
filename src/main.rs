@@ -90,7 +90,7 @@ async fn main() {
         GatewayIntents::non_privileged() | GatewayIntents::MESSAGE_CONTENT | GatewayIntents::GUILD_MEMBERS;
     let client = serenity::ClientBuilder::new(token, intents)
         .framework(framework)
-        .activity(ActivityData::playing("arcade_zombies_prison"))
+        .activity(ActivityData::custom("NPC moment..."))
         .await;
     client.unwrap().start_autosharded().await.unwrap()
 }

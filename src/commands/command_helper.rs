@@ -31,8 +31,12 @@ pub(crate) fn cooldown(ctx: &Context, user: u64, guild: u64) -> Result<(), Error
         member: None,
         __non_exhaustive: (),
     };
-    match cooldown_tracker.remaining_cooldown((*ctx).cooldown_context(), &cooldown_durations) {
-        Some(remaining) => Err(format!("Please wait {} seconds", remaining.as_secs()).into()),
-        None => Ok(cooldown_tracker.start_cooldown((*ctx).cooldown_context())),
+    if ctx.framework().options.owners.contains(&ctx.author().id) {
+        Ok(())
+    } else {
+        match cooldown_tracker.remaining_cooldown((*ctx).cooldown_context(), &cooldown_durations) {
+            Some(remaining) => Err(format!("Please wait {} seconds", remaining.as_secs()).into()),
+            None => Ok(cooldown_tracker.start_cooldown((*ctx).cooldown_context())),
+        }
     }
 }

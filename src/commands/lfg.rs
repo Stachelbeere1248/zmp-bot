@@ -1,6 +1,5 @@
 use poise::{ChoiceParameter, CreateReply};
 use serenity::all::{CreateAllowedMentions, RoleId};
-
 //from main.rs
 use crate::commands::command_helper::cooldown;
 use crate::{Context, Error};
@@ -72,8 +71,8 @@ pub(crate) async fn lfg(
     #[rename = "message"]
     note: Option<String>,
 ) -> Result<(), Error> {
-    let mut reply: CreateReply = CreateReply::default();
     let guild_id = ctx.guild_id().unwrap().get();
+    let mut reply: CreateReply = CreateReply::default();
     reply = match cooldown(&ctx, 600, 300) {
         Ok(_) => {
             let current: u8 = current_players.unwrap_or(1);
@@ -82,18 +81,6 @@ pub(crate) async fn lfg(
                 desired = 4
             }
             let map_name: &str = map.name();
-            let old_ping: u64 = match mode {
-                Casual => match map {
-                    DeadEnd => 1005837123921915914,
-                    BadBlood => 1140190470698438666,
-                    AlienArcadium => 1105917281898336356,
-                    Prison => 1253440747454333009,
-                },
-                Speedrun => 1005836989595144243,
-                Challenge => 1005836864680361994,
-                Event => 1175116511095050331,
-                //Tournament => 1210508966036242445,
-            };
             let new_ping: u64 = match mode {
                 Casual => match map {
                     DeadEnd => 1257408106783178752,
@@ -108,7 +95,6 @@ pub(crate) async fn lfg(
             };
             let ping = match guild_id {
                 1256217633959841853 => new_ping,
-                995300932164276234 => old_ping,
                 _ => 0,
             };
             let difficulty: Difficulty = match map {
@@ -144,13 +130,15 @@ pub(crate) async fn lfg(
     Ok(())
 }
 #[derive(Debug, poise::ChoiceParameter)]
-enum Expert {
+enum ExpertMap {
     #[name = "Dead End"]
     DeadEnd,
     #[name = "Bad Blood"]
     BadBlood,
     #[name = "Alien Arcadium"]
     AlienArcadium,
+    //#[name = "Prison"]
+    //Prison,
     #[name = "Speedrun"]
     Speedrun,
 }
@@ -158,7 +146,7 @@ enum Expert {
 pub(crate) async fn expert(
     ctx: Context<'_>,
 
-    #[rename = "map"] mode: Expert,
+    #[rename = "map"] mode: ExpertMap,
 
     #[min = 1_u8]
     #[max = 3_u8]
@@ -183,77 +171,24 @@ pub(crate) async fn expert(
             let current: u8 = current_players.unwrap_or(1);
             let mut desired: u8 = desired_players.unwrap_or(4);
             if current >= desired {
-                desired = 4
-            }
-            //TODO ZMPv2
+                desired = 4;
+            };
             let (ping, allowed_roles): (u64, Vec<u64>) = match mode {
-                Expert::Speedrun => (
-                    1243676538067488828,
-                    vec![
-                        1235975301461184513,
-                        1235975620400386172,
-                        1235975954413654167,
-                        1235976165345329162,
-                        1235976366109753404,
-                        1235967416605872179,
-                        1235967676048740434,
-                        1235968713354907648,
-                        1235968958511841351,
-                        1235969159679180860,
-                        1236226368052658217,
-                        1173396223592513647,
-                    ],
+                ExpertMap::Speedrun => (
+                    1295322375637958716,
+                    ROLE_LIST.iter().skip(2).map(|tier| [tier[4], tier[5]]).flatten().collect()
                 ),
-                Expert::DeadEnd => (
-                    1243675610895880366,
-                    vec![
-                        1235975562498015354,
-                        1235975873187020900,
-                        1235976093517746227,
-                        1235976301702156359,
-                        1235976469683896441,
-                        1235967416605872179,
-                        1235967676048740434,
-                        1235968713354907648,
-                        1235968958511841351,
-                        1235969159679180860,
-                        1236226368052658217,
-                        1173396223592513647,
-                    ],
+                ExpertMap::DeadEnd => (
+                    1295321319344177172,
+                    ROLE_LIST.iter().skip(2).map(|tier| [tier[1], tier[5]]).flatten().collect()
                 ),
-                Expert::BadBlood => (
-                    1243676387634708491,
-                    vec![
-                        1235975518529261599,
-                        1235975747219357706,
-                        1235976055769268274,
-                        1235976257414631464,
-                        1235976434724376728,
-                        1235967416605872179,
-                        1235967676048740434,
-                        1235968713354907648,
-                        1235968958511841351,
-                        1235969159679180860,
-                        1236226368052658217,
-                        1173396223592513647,
-                    ],
+                ExpertMap::BadBlood => (
+                    1295322259631640607,
+                    ROLE_LIST.iter().skip(2).map(|tier| [tier[2], tier[5]]).flatten().collect()
                 ),
-                Expert::AlienArcadium => (
-                    1243676465829249116,
-                    vec![
-                        1235975471968157851,
-                        1235975697487364237,
-                        1235975991617130567,
-                        1235976216469835926,
-                        1235976398380863549,
-                        1235967416605872179,
-                        1235967676048740434,
-                        1235968713354907648,
-                        1235968958511841351,
-                        1235969159679180860,
-                        1236226368052658217,
-                        1173396223592513647,
-                    ],
+                ExpertMap::AlienArcadium => (
+                    1295322327910842441,
+                    ROLE_LIST.iter().skip(2).map(|tier| [tier[3], tier[5]]).flatten().collect()
                 ),
             };
             let is_expert: bool = ctx
@@ -282,3 +217,15 @@ pub(crate) async fn expert(
     }
     Ok(())
 }
+
+const ROLE_LIST: [[u64;6]; 9] = [ // [[basic, de, bb, aa, sr, star]; 9]
+    [1256229103678259311, 1256229192744304670, 1256229223450935377, 1256229498899271754, 1256229540900900996, 1256229575269154866], //novice
+    [1256230831131983932, 1256230750827577447, 1256230776828334143, 1256230793630715975, 1256230818444214333, 1256230734642024468], //seasoned
+    [1256230723455553556, 1256230653083521045, 1256230666786443310, 1256230686214324255, 1256230704061353995, 1256230636721537097], //expert
+    [1256230625635995718, 1256230573203128370, 1256230582908747776, 1256230600025706506, 1256230610998005872, 1256230557897986068], //pro
+    [1256230543532626002, 1256230480823582861, 1256230502273126421, 1256230515355160597, 1256230531478065243, 1256230463241191494], //master
+    [1256230442907074703, 1256230359419588700, 1256230396719403141, 1256230416516649012, 1256230429212545025, 1256230346848997396], //grandmaster
+    [1256230332169060362, 1256230266889044020, 1256230288888168458, 1256230416516649012, 1256230316528631870, 1256230242943766651], //legend
+    [1256230231732387950, 1256230157967163495, 1256230181199151254, 1256230194499420223, 1256230207099244646, 1256230102627258449], //divine
+    [1256230002597302322, 1256229873064869939, 1256229929247440906, 1256229963166646314, 1256229982569627792, 1256229672598110218], //goat
+];

@@ -19,7 +19,6 @@ pub(crate) async fn helpstart(
     let mut reply = CreateReply::default();
     let ping = match g {
         1256217633959841853_u64 => 1257411572092113017_u64,
-        995300932164276234_u64 => 1008075054971621448_u64,
         _ => 0_u64
     };
 
