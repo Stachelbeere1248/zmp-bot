@@ -3,15 +3,15 @@ use reqwest::{Client, Response};
 use serde::Deserialize;
 use serenity::{
     all::{
+        ChannelId,
+        CreateActionRow,
         CreateAllowedMentions,
         CreateButton,
-        CreateActionRow,
-        User,
+        CreateMessage,
         ReactionType,
-        ChannelId,
-        CreateMessage
+        User,
     },
-    json::JsonError
+    json::JsonError,
 };
 use sqlx::{Pool, query_as, Sqlite};
 
@@ -44,7 +44,7 @@ struct MojangPlayer {
 
 #[derive(PartialEq, sqlx::FromRow)]
 struct Uuid {
-    uuid: String
+    uuid: String,
 }
 impl Uuid {
     fn get(&self) -> &str {
@@ -58,9 +58,9 @@ impl Uuid {
                 let response_text = res.text().await.unwrap();
                 let uuid = (serde_json::from_str(response_text.as_str())
                     as Result<MojangPlayer, JsonError>)
-                    .map(|mojang_player: MojangPlayer| Uuid {uuid: mojang_player.id})?;
+                    .map(|mojang_player: MojangPlayer| Uuid { uuid: mojang_player.id })?;
                 Ok(uuid)
-            },
+            }
             Err(why) => Err(Error::from(format!(
                 "Mojang returned an error. Please make sure to enter a valid Minecraft username.\n\n\
                 Details: {}", why).as_str())),
@@ -69,7 +69,7 @@ impl Uuid {
 }
 #[derive(PartialEq)]
 struct DiscordId {
-    id: u64
+    id: u64,
 }
 impl DiscordId {
     async fn matches_fetch(user: &User, uuid: &str, client: &Client) -> Result<bool, Error> {
@@ -82,7 +82,7 @@ impl DiscordId {
                     as Result<HypixelResponse, JsonError>)
                     .map(|hypixel_response: HypixelResponse| user.name == hypixel_response.player.social_media.links.discord)?;
                 Ok(matches)
-            },
+            }
             Err(why) => {
                 println!("Hypixel issue: {}", why);
                 Err(Error::from("Hypixel returned an error."))
@@ -91,9 +91,11 @@ impl DiscordId {
     }
 }
 impl<'a, R: sqlx::Row> sqlx::FromRow<'a, R> for DiscordId
-where &'a ::std::primitive::str: sqlx::ColumnIndex<R>,
+where
+    &'a ::std::primitive::str: sqlx::ColumnIndex<R>,
     i64: ::sqlx::decode::Decode<'a, R::Database>,
-    i64: ::sqlx::types::Type<R::Database> {
+    i64: ::sqlx::types::Type<R::Database>,
+{
     fn from_row(row: &'a R) -> sqlx::Result<Self> {
         let discord_id: i64 = row.try_get("discord_id")?;
         Ok(DiscordId {
@@ -123,7 +125,7 @@ impl Link {
     async fn discord(mut self, pool: &Pool<Sqlite>) -> Self {
         let link_id: i16 = self.link_id.cast_signed();
         self.discord_ids = query_as(format!("SELECT discord_id FROM discord_links WHERE link_id = {link_id};").as_str())
-                .fetch_all(pool).await.expect("Error getting Discord IDs.");
+            .fetch_all(pool).await.expect("Error getting Discord IDs.");
         self
     }
 }
@@ -137,12 +139,10 @@ pub(crate) async fn account(_ctx: Context<'_>) -> Result<(), Error> {
 #[poise::command(slash_command)]
 pub(crate) async fn add<'a>(
     ctx: Context<'_>,
-
     #[description = "Minecraft username"]
     #[min_length = 2]
     #[max_length = 16]
     ign: String,
-
     user: Option<User>,
 ) -> Result<(), Error> {
     ctx.defer_ephemeral().await?;
@@ -155,7 +155,8 @@ pub(crate) async fn add<'a>(
             let r = CreateReply::default().ephemeral(false);
             let pool: Pool<Sqlite> = ctx.data().sqlite_pool.clone();
             let (status, link_id) = match link_id_from_minecraft(&pool, uuid.get()).await {
-                None => { match link_id_from_discord(&pool, user.id.get()).await {
+                None => {
+                    match link_id_from_discord(&pool, user.id.get()).await {
                         None => {
                             let id = new_link_id(&pool).await;
                             sqlx::query(format!("INSERT INTO discord_links VALUES ({}, {});", id.cast_signed(), user.id.get()).as_str())
@@ -170,13 +171,14 @@ pub(crate) async fn add<'a>(
                             ("Your Discord account has previously had an account linked. Added the new link.", dc_id)
                         }
                     }
-                }, Some(mc_id) => {
+                }
+                Some(mc_id) => {
                     match link_id_from_discord(&pool, user.id.get()).await {
                         None => {
                             sqlx::query(format!("INSERT INTO discord_links VALUES ({}, {});", mc_id.cast_signed(), user.id.get()).as_str())
                                 .execute(&pool).await.expect("Database Error: inserting new minecraft value");
                             ("Your Minecraft account has previously had an account linked. Added the new link.", mc_id)
-                        },
+                        }
                         Some(dc_id) => {
                             sqlx::query(format!("UPDATE minecraft_links SET link_id = {} WHERE link_id = {};", mc_id.cast_signed(), dc_id.cast_signed()).as_str())
                                 .execute(&pool).await.expect("Database Error: Merging Minecraft Accounts.");
@@ -198,7 +200,7 @@ pub(crate) async fn add<'a>(
                     .components(vec![CreateActionRow::Buttons(vec![
                         CreateButton::new("accept_verification").emoji(ReactionType::from('✅')),
                         CreateButton::new("deny_verification").emoji(ReactionType::from('❌')),
-                    ])])
+                    ])]),
             ).await?;
         }
         false => {
@@ -214,7 +216,7 @@ pub(crate) async fn add<'a>(
 #[poise::command(slash_command)]
 pub(crate) async fn list(
     ctx: Context<'_>,
-    user: Option<User>
+    user: Option<User>,
 ) -> Result<(), Error> {
     ctx.defer().await?;
     let user = user.unwrap_or(ctx.author().clone());

@@ -9,7 +9,7 @@ use poise::serenity_prelude as serenity;
 use serenity::{FullEvent, model::id::UserId};
 use serenity::all::{ActivityData, InteractionType, RoleId};
 use serenity::prelude::GatewayIntents;
-use sqlx::{Sqlite};
+use sqlx::Sqlite;
 use tokio::sync::RwLock;
 
 mod commands;
@@ -59,12 +59,11 @@ async fn main() {
         on_error: |error| {
             Box::pin(async move {
                 match error {
-
                     other => poise::builtins::on_error(other).await.unwrap(),
                 }
             })
         },
-        owners: { HashSet::from([UserId::new(449579075531440128_u64),UserId::new(659112817508745216_u64)]) },
+        owners: { HashSet::from([UserId::new(449579075531440128_u64), UserId::new(659112817508745216_u64)]) },
         event_handler: |_ctx, event, _framework, _data| {
             Box::pin(event_handler(_ctx, event, _framework, _data))
         },
@@ -103,22 +102,25 @@ async fn event_handler(
     match event {
         FullEvent::Ready { data_about_bot, .. } => {
             println!("Logged in as {}", data_about_bot.user.name);
-        },
+        }
         FullEvent::GuildMemberAddition { new_member } => {
             println!("join event");
             if new_member.guild_id.get() == 1256217633959841853_u64 {
                 new_member.add_role(ctx, RoleId::new(1256253358701023232_u64)).await?;
                 println!("gave member role");
             }
-        },
-        FullEvent::InteractionCreate {interaction} => {
+        }
+        FullEvent::InteractionCreate { interaction } => {
             if interaction.application_id().get() == 1165594074473037824
                 && interaction.kind() == InteractionType::Component {
                 handlers::bot_interaction::component(ctx, interaction).await?;
             }
-        },
+        }
         FullEvent::Message { new_message } => {
-            handlers::message::create(ctx, new_message).await?;
+            handlers::message::on_create(ctx, new_message).await?;
+        }
+        FullEvent::ThreadCreate { thread } => {
+            handlers::thread::on_create(ctx, thread).await?;
         }
         _ => {}
     }

@@ -1,8 +1,9 @@
 use poise::{ChoiceParameter, CreateReply};
 use serenity::all::{CreateAllowedMentions, RoleId};
+
+use crate::{Context, Error};
 //from main.rs
 use crate::commands::command_helper::cooldown;
-use crate::{Context, Error};
 //
 use crate::commands::lfg::Difficulty::Normal;
 use crate::commands::lfg::Map::*;
@@ -44,29 +45,23 @@ pub enum Difficulty {
 #[poise::command(slash_command, guild_only)]
 pub(crate) async fn lfg(
     ctx: Context<'_>,
-
     #[rename = "map"] map: Map,
-
     #[description = "Normal"]
     #[rename = "difficulty"]
     difficulty: Option<Difficulty>,
-
     #[rename = "mode"]
     #[description = "play-style"]
     mode: Mode,
-
     #[min = 1_u8]
     #[max = 3_u8]
     #[description = "default: 1"]
     #[rename = "current"]
     current_players: Option<u8>,
-
     #[min = 2_u8]
     #[max = 4_u8]
     #[description = "default: 4"]
     #[rename = "desired"]
     desired_players: Option<u8>,
-
     #[description = "optional extra message"]
     #[rename = "message"]
     note: Option<String>,
@@ -102,7 +97,7 @@ pub(crate) async fn lfg(
                 AlienArcadium => Normal,
             };
 
-            let mut reply_content: String = format!("<@&{ping}> {current}/{desired} {map_name}",);
+            let mut reply_content: String = format!("<@&{ping}> {current}/{desired} {map_name}", );
             match difficulty {
                 Normal => {}
                 Difficulty::Hard | Difficulty::Rip => {
@@ -142,31 +137,25 @@ enum ExpertMap {
     #[name = "Speedrun"]
     Speedrun,
 }
-#[poise::command(slash_command, guild_only, rename = "expert-lfg")]
+#[poise::command(slash_command, guild_only, rename = "lfg-expert")]
 pub(crate) async fn expert(
     ctx: Context<'_>,
-
     #[rename = "map"] mode: ExpertMap,
-
     #[min = 1_u8]
     #[max = 3_u8]
     #[description = "default: 1"]
     #[rename = "current"]
     current_players: Option<u8>,
-
     #[min = 2_u8]
     #[max = 4_u8]
     #[description = "default: 4"]
     #[rename = "desired"]
     desired_players: Option<u8>,
-
     #[description = "extra message"]
     #[rename = "message"]
     note: String,
 ) -> Result<(), Error> {
-    let mut reply: CreateReply = CreateReply::default();
-
-    reply = match cooldown(&ctx, 600, 300) {
+    let reply: CreateReply = match cooldown(&ctx, 600, 300) {
         Ok(_) => {
             let current: u8 = current_players.unwrap_or(1);
             let mut desired: u8 = desired_players.unwrap_or(4);
@@ -199,17 +188,20 @@ pub(crate) async fn expert(
                 .iter()
                 .any(|user_role: &RoleId| allowed_roles.contains(&user_role.get()));
             let reply_content: String = format!("{current}/{desired} <@&{ping}>: {note}");
+
             match is_expert {
-                true => reply
+                true => CreateReply::default()
                     .content(reply_content)
                     .ephemeral(false)
                     .allowed_mentions(CreateAllowedMentions::new().roles(vec![ping])),
-                false => reply
+                false => CreateReply::default()
                     .content("You do not have any of the required expert ranks.")
                     .ephemeral(true),
             }
         }
-        Err(why) => reply.content(why.to_string()).ephemeral(true),
+        Err(why) => {
+            CreateReply::default().content(why.to_string()).ephemeral(true)
+        }
     };
 
     if let Err(why) = ctx.send(reply).await {
@@ -218,7 +210,54 @@ pub(crate) async fn expert(
     Ok(())
 }
 
-const ROLE_LIST: [[u64;6]; 9] = [ // [[basic, de, bb, aa, sr, star]; 9]
+#[derive(Debug, poise::ChoiceParameter)]
+enum OtherPing {
+    #[name = "GeoGuessr"]
+    GeoGuessr,
+}
+#[poise::command(slash_command, guild_only, rename = "lfg-other")]
+pub(crate) async fn other(
+    ctx: Context<'_>,
+    #[rename = "game"]
+    game: OtherPing,
+    #[min = 1_u8]
+    #[max = 3_u8]
+    #[description = "default: 1"]
+    #[rename = "current"]
+    current_players: Option<u8>,
+    #[description = "extra message"]
+    #[rename = "message"]
+    note: String,
+) -> Result<(), Error> {
+    let reply: CreateReply = match cooldown(&ctx, 0, 7200) {
+        Ok(_) => {
+            let current: u8 = current_players.unwrap_or(1);
+            let desired: u8 = match game {
+                OtherPing::GeoGuessr => 20_u8,
+            };
+            let ping: u64 = match game {
+                OtherPing::GeoGuessr => 1302249562999885824_u64,
+            };
+            let reply_content: String = format!("{current}/{desired} <@&{ping}>: {note}");
+
+            CreateReply::default()
+                .content(reply_content)
+                .ephemeral(false)
+                .allowed_mentions(CreateAllowedMentions::new().roles(vec![ping]))
+        }
+        Err(why) => {
+            CreateReply::default().content(why.to_string()).ephemeral(true)
+        }
+    };
+
+    if let Err(why) = ctx.send(reply).await {
+        println!("Error sending message: {why}");
+    }
+    Ok(())
+}
+
+
+const ROLE_LIST: [[u64; 6]; 9] = [ // [[basic, de, bb, aa, sr, star]; 9]
     [1256229103678259311, 1256229192744304670, 1256229223450935377, 1256229498899271754, 1256229540900900996, 1256229575269154866], //novice
     [1256230831131983932, 1256230750827577447, 1256230776828334143, 1256230793630715975, 1256230818444214333, 1256230734642024468], //seasoned
     [1256230723455553556, 1256230653083521045, 1256230666786443310, 1256230686214324255, 1256230704061353995, 1256230636721537097], //expert

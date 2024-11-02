@@ -1,10 +1,11 @@
 use serenity::all::{ComponentInteraction, ComponentInteractionDataKind, Context, CreateMessage, EditMessage, GuildId, Interaction, RoleId};
+
 use crate::Error;
 
 pub(crate) async fn component(ctx: &Context, interaction: &Interaction) -> Result<(), Error> {
     let component = interaction.clone().message_component().unwrap();
     match component.data.kind {
-        ComponentInteractionDataKind::Button => button(ctx, component, ).await,
+        ComponentInteractionDataKind::Button => button(ctx, component).await,
         _ => Ok(())
     }
 }
@@ -21,7 +22,7 @@ async fn button(ctx: &Context, mut component: ComponentInteraction) -> Result<()
             member.remove_role(ctx, RoleId::new(1256253358701023232_u64)).await?;
             component.message.edit(ctx, EditMessage::new().components(vec![])).await?;
             Ok(())
-        },
+        }
         "deny_verification" => {
             let _dm = u.direct_message(ctx, CreateMessage::new()
                 .content("Your verified minecraft account was denied.")).await?;
