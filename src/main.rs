@@ -46,6 +46,7 @@ async fn main() {
         commands: vec![
             commands::lfg::lfg(),
             commands::lfg::expert(),
+            commands::lfg::other(),
             commands::xd::xd(),
             commands::helpstart::helpstart(),
             commands::bots::bots(),
