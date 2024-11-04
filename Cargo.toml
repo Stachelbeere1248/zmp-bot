@@ -10,7 +10,7 @@ poise = "0.6.1"
 serenity = { version = "0.12.1", default-features = false,  features = ["client", "gateway", "model", "rustls_backend", "utils", "framework"] }
 tokio = { version = "1.37.0", features = ["macros", "rt-multi-thread", "rt"] }
 env_logger = "0.11.3"
-anyhow = "1.0.86"
+anyhow = "1.0.92"
 tracing = "0.1.40"
 regex = "1.10.4"
 sqlx = { version = "0.8.2", features = ["sqlite", "sqlx-sqlite", "runtime-tokio"]}
