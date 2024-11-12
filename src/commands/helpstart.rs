@@ -1,8 +1,9 @@
 use poise::CreateReply;
 use serenity::all::CreateAllowedMentions;
 
-use crate::{Context, Error};
+use crate::Context;
 use crate::commands::command_helper;
+use crate::error::Error;
 
 #[poise::command(slash_command, guild_only)]
 pub(crate) async fn helpstart(

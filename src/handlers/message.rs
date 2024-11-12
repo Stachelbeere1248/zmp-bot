@@ -1,6 +1,6 @@
 use serenity::all::{Context, Message};
 
-use crate::Error;
+use crate::error::Error;
 
 pub(crate) async fn on_create(ctx: &Context, msg: &Message) -> Result<(), Error> {
     match msg.guild_id.map(|g| g.get()) {

@@ -1,7 +1,7 @@
 use std::string::String;
-
-use crate::{Context, Error};
-use crate::commands::command_helper;
+use poise::CreateReply;
+use crate::Context;
+use crate::error::Error;
 
 #[poise::command(slash_command, guild_only, owners_only)]
 pub(crate) async fn bots(
@@ -12,6 +12,7 @@ pub(crate) async fn bots(
 ) -> Result<(), Error> {
     ctx.defer_ephemeral().await?;
     *ctx.data().bots.write().await = bots;
-    let reply = format!("{} bots are now registered as available", bots).to_string();
-    command_helper::send_simple(ctx, reply).await
+    let content = format!("{} bots are now registered as available", bots).to_string();
+    ctx.send(CreateReply::default().content(content).ephemeral(true)).await?;
+    Ok(())
 }

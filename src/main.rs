@@ -5,22 +5,25 @@ use std::convert::Into;
 use std::sync::Arc;
 use std::time::Duration;
 
-use poise::serenity_prelude as serenity;
+use poise::{CreateReply, FrameworkError, serenity_prelude as serenity};
 use serenity::{FullEvent, model::id::UserId};
 use serenity::all::{ActivityData, InteractionType, RoleId};
 use serenity::prelude::GatewayIntents;
 use sqlx::Sqlite;
 use tokio::sync::RwLock;
+use error::Error;
 
 mod commands;
 mod handlers;
+mod error;
 
 struct Data {
     bots: Arc<RwLock<u8>>,
     sqlite_pool: sqlx::Pool<Sqlite>,
     hypixel_api_client: reqwest::Client,
 } // User data, which is stored and accessible in all command invocations
-type Error = Box<dyn std::error::Error + Send + Sync>;
+
+
 type Context<'a> = poise::Context<'a, Data, Error>;
 #[tokio::main]
 async fn main() {
@@ -59,7 +62,18 @@ async fn main() {
         on_error: |error| {
             Box::pin(async move {
                 match error {
-                    other => poise::builtins::on_error(other).await.unwrap(),
+                    FrameworkError::CommandStructureMismatch { description, ctx, .. } => {
+                        if let Err(e) = ctx.send(CreateReply::default()
+                            .content(format!("# Command arguments did not match. The command probably has been updated recently. Try reloading Discord. Description:\n{}", description)))
+                            .await {
+                            tracing::error!("Fatal error while sending error message: {}", e);
+                        }
+                    }
+                    other => {
+                        if let Err(e) = poise::builtins::on_error(other).await {
+                            tracing::error!("Fatal error while sending error message: {}", e);
+                        }
+                    }
                 }
             })
         },

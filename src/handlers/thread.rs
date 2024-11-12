@@ -1,7 +1,7 @@
 use serenity::all::{Context, GuildChannel};
 use serenity::builder::EditThread;
 
-use crate::Error;
+use crate::error::Error;
 
 pub(crate) async fn on_create(ctx: &Context, thread: &GuildChannel) -> Result<(), Error> {
     match thread.parent_id.map(|parent| parent.get()) {

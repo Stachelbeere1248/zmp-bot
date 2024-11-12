@@ -1,13 +1,14 @@
 use poise::{ChoiceParameter, CreateReply};
 use serenity::all::{CreateAllowedMentions, RoleId};
 
-use crate::{Context, Error};
+use crate::Context;
 //from main.rs
 use crate::commands::command_helper::cooldown;
 //
 use crate::commands::lfg::Difficulty::Normal;
 use crate::commands::lfg::Map::*;
 use crate::commands::lfg::Mode::*;
+use crate::error::Error;
 
 #[derive(Debug, poise::ChoiceParameter, PartialEq)]
 pub enum Map {

@@ -15,7 +15,8 @@ use serenity::{
 };
 use sqlx::{Pool, query_as, Sqlite};
 
-use crate::{Context, Error};
+use crate::Context;
+use crate::error::Error;
 
 #[derive(Deserialize)]
 struct Links {
@@ -53,7 +54,12 @@ impl Uuid {
     async fn fetch(ign: &str) -> Result<Self, Error> {
         let url: String = format!("https://api.mojang.com/users/profiles/minecraft/{ign}");
         let response: Response = reqwest::get(url).await?;
-        match response.error_for_status() {
+        let response_text = response.error_for_status()?.text().await.unwrap();
+        let uuid = (serde_json::from_str(response_text.as_str())
+            as Result<MojangPlayer, JsonError>)
+            .map(|mojang_player: MojangPlayer| Uuid { uuid: mojang_player.id })?;
+        Ok(uuid)
+        /*match response.error_for_status() {
             Ok(res) => {
                 let response_text = res.text().await.unwrap();
                 let uuid = (serde_json::from_str(response_text.as_str())
@@ -64,7 +70,7 @@ impl Uuid {
             Err(why) => Err(Error::from(format!(
                 "Mojang returned an error. Please make sure to enter a valid Minecraft username.\n\n\
                 Details: {}", why).as_str())),
-        }
+        }*/
     }
 }
 #[derive(PartialEq)]
@@ -75,19 +81,11 @@ impl DiscordId {
     async fn matches_fetch(user: &User, uuid: &str, client: &Client) -> Result<bool, Error> {
         let url: String = format!("https://api.hypixel.net/v2/player?uuid={}", uuid);
         let response: Response = client.get(url).send().await?;
-        match response.error_for_status() {
-            Ok(res) => {
-                let response_text = res.text().await.unwrap();
-                let matches = (serde_json::from_str(response_text.as_str())
-                    as Result<HypixelResponse, JsonError>)
-                    .map(|hypixel_response: HypixelResponse| user.name == hypixel_response.player.social_media.links.discord)?;
-                Ok(matches)
-            }
-            Err(why) => {
-                println!("Hypixel issue: {}", why);
-                Err(Error::from("Hypixel returned an error."))
-            }
-        }
+        let response_text = response.error_for_status()?.text().await.unwrap();
+        let matches = (serde_json::from_str(response_text.as_str())
+            as Result<HypixelResponse, JsonError>)
+            .map(|hypixel_response: HypixelResponse| user.name == hypixel_response.player.social_media.links.discord)?;
+        Ok(matches)
     }
 }
 impl<'a, R: sqlx::Row> sqlx::FromRow<'a, R> for DiscordId
@@ -116,17 +114,17 @@ impl Link {
             minecraft_accounts: vec![],
         }
     }
-    async fn minecraft(mut self, pool: &Pool<Sqlite>) -> Self {
+    async fn minecraft(mut self, pool: &Pool<Sqlite>) -> Result<Self, Error> {
         let link_id: i16 = self.link_id.cast_signed();
         self.minecraft_accounts = query_as(format!("SELECT minecraft_uuid AS uuid FROM minecraft_links WHERE link_id = {link_id};").as_str())
-            .fetch_all(pool).await.expect("Error getting Minecraft UUIDs.");
-        self
+            .fetch_all(pool).await?;
+        Ok(self)
     }
-    async fn discord(mut self, pool: &Pool<Sqlite>) -> Self {
+    async fn discord(mut self, pool: &Pool<Sqlite>) -> Result<Self, Error> {
         let link_id: i16 = self.link_id.cast_signed();
         self.discord_ids = query_as(format!("SELECT discord_id FROM discord_links WHERE link_id = {link_id};").as_str())
-            .fetch_all(pool).await.expect("Error getting Discord IDs.");
-        self
+            .fetch_all(pool).await?;
+        Ok(self)
     }
 }
 #[poise::command(slash_command, subcommands("add", "list"))]
@@ -148,26 +146,23 @@ pub(crate) async fn add<'a>(
     ctx.defer_ephemeral().await?;
     let user = user.unwrap_or(ctx.author().clone());
     let uuid = Uuid::fetch(ign.as_str()).await?;
-    let valid = DiscordId::matches_fetch(&user, uuid.get(), &ctx.data().hypixel_api_client).await
-        .expect("This Minecraft account does not have a Discord account linked.");
-    match valid {
+    match DiscordId::matches_fetch(&user, uuid.get(), &ctx.data().hypixel_api_client).await? {
         true => {
-            let r = CreateReply::default().ephemeral(false);
             let pool: Pool<Sqlite> = ctx.data().sqlite_pool.clone();
             let (status, link_id) = match link_id_from_minecraft(&pool, uuid.get()).await {
                 None => {
                     match link_id_from_discord(&pool, user.id.get()).await {
                         None => {
-                            let id = new_link_id(&pool).await;
+                            let id = new_link_id(&pool).await?;
                             sqlx::query(format!("INSERT INTO discord_links VALUES ({}, {});", id.cast_signed(), user.id.get()).as_str())
-                                .execute(&pool).await.expect("Database Error: inserting new minecraft value");
+                                .execute(&pool).await?;
                             sqlx::query(format!("INSERT INTO minecraft_links VALUES ({}, \"{}\");", id.cast_signed(), uuid.get()).as_str())
-                                .execute(&pool).await.expect("Database Error: inserting new minecraft value");
+                                .execute(&pool).await?;
                             ("Linked your Discord and Minecraft account.", id)
                         }
                         Some(dc_id) => {
                             sqlx::query(format!("INSERT INTO minecraft_links VALUES ({}, \"{}\");", dc_id.cast_signed(), uuid.get()).as_str())
-                                .execute(&pool).await.expect("Database Error: inserting new minecraft value");
+                                .execute(&pool).await?;
                             ("Your Discord account has previously had an account linked. Added the new link.", dc_id)
                         }
                     }
@@ -176,22 +171,21 @@ pub(crate) async fn add<'a>(
                     match link_id_from_discord(&pool, user.id.get()).await {
                         None => {
                             sqlx::query(format!("INSERT INTO discord_links VALUES ({}, {});", mc_id.cast_signed(), user.id.get()).as_str())
-                                .execute(&pool).await.expect("Database Error: inserting new minecraft value");
+                                .execute(&pool).await?;
                             ("Your Minecraft account has previously had an account linked. Added the new link.", mc_id)
                         }
                         Some(dc_id) => {
                             sqlx::query(format!("UPDATE minecraft_links SET link_id = {} WHERE link_id = {};", mc_id.cast_signed(), dc_id.cast_signed()).as_str())
-                                .execute(&pool).await.expect("Database Error: Merging Minecraft Accounts.");
+                                .execute(&pool).await?;
                             sqlx::query(format!("UPDATE discord_links SET link_id = {} WHERE link_id = {};", mc_id.cast_signed(), dc_id.cast_signed()).as_str())
-                                .execute(&pool).await.expect("Database Error: Merging Discord Accounts.");
+                                .execute(&pool).await?;
                             ("Both your Discord and Minecraft account had linked accounts. Merged all account links.", mc_id)
                         }
                     }
                 }
             };
-            ctx.send(r.content(status)).await?;
-            let link = Link::new(link_id).minecraft(&pool).await.discord(&pool).await;
-            let s = list_string(link, user.id.get()).await;
+            let link = Link::new(link_id).minecraft(&pool).await?.discord(&pool).await?;
+            let s = list_string(link, user.id.get());
             ChannelId::new(1257776992497959075).send_message(
                 ctx,
                 CreateMessage::new()
@@ -202,15 +196,14 @@ pub(crate) async fn add<'a>(
                         CreateButton::new("deny_verification").emoji(ReactionType::from('❌')),
                     ])]),
             ).await?;
-        }
+            ctx.send(CreateReply::default().ephemeral(false).content(status)).await?;
+            Ok(())
+        },
         false => {
-            let r = CreateReply::default().ephemeral(true)
-                .content(format!("The Discord account linked on Hypixel does not seem to match the specified account.\n\
-                Expected account link: `{}`", user.name));
-            ctx.send(r).await?;
+            Err(Error::Other(format!("The Discord account linked on Hypixel does not match the specified discord account.\n\
+                Please set your linked Discord account on Hypixel to `{}`.", user.name)))
         }
     }
-    Ok(())
 }
 
 #[poise::command(slash_command)]
@@ -223,18 +216,18 @@ pub(crate) async fn list(
     let r = CreateReply::default().ephemeral(false);
     let pool: Pool<Sqlite> = ctx.data().sqlite_pool.clone();
     let link_id = link_id_from_discord(&pool, user.id.get()).await.expect("This user has no linked accounts");
-    let link = Link::new(link_id).minecraft(&pool).await.discord(&pool).await;
-    let s = list_string(link, user.id.get()).await;
+    let link = Link::new(link_id).minecraft(&pool).await?.discord(&pool).await?;
+    let s = list_string(link, user.id.get());
     ctx.send(r.content(s).allowed_mentions(CreateAllowedMentions::new().empty_roles().empty_users())).await?;
     Ok(())
 }
 
 #[poise::command(slash_command)]
 pub(crate) async fn remove(_ctx: Context<'_>) -> Result<(), Error> {
-    unreachable!()
+    unimplemented!()
 }
 
-async fn list_string(link: Link, user_id: u64) -> String {
+fn list_string(link: Link, user_id: u64) -> String {
     let mut discord_list = String::from("### Discord:");
     for dc in link.discord_ids {
         discord_list.push_str(format!("\n- <@{}>", dc.id).as_str());
@@ -247,26 +240,16 @@ async fn list_string(link: Link, user_id: u64) -> String {
 }
 
 async fn link_id_from_minecraft(pool: &Pool<Sqlite>, minecraft_uuid: &str) -> Option<u16> {
-    return query_as(
-        format!(
-            "SELECT link_id FROM minecraft_links WHERE minecraft_uuid = \"{minecraft_uuid}\" LIMIT 1;"
-        )
-            .as_str(),
-    )
+    query_as(format!("SELECT link_id FROM minecraft_links WHERE minecraft_uuid = \"{minecraft_uuid}\" LIMIT 1;").as_str())
         .fetch_optional(pool)
-        .await
-        .expect("Database error: fetching link id by uuid")
-        .map(|link_id: LinkId| link_id.link_id.cast_unsigned());
+        .await.expect("Database error: fetching link id by uuid")
+        .map(|link_id: LinkId| link_id.link_id.cast_unsigned())
 }
 async fn link_id_from_discord(pool: &Pool<Sqlite>, snowflake: u64) -> Option<u16> {
-    let discord_id: i64 = snowflake.cast_signed();
-    return query_as(
-        format!("SELECT link_id FROM discord_links WHERE discord_id = {discord_id} LIMIT 1;").as_str(),
-    )
+    query_as(format!("SELECT link_id FROM discord_links WHERE discord_id = {} LIMIT 1;", snowflake.cast_signed()).as_str())
         .fetch_optional(pool)
-        .await
-        .expect("Database error: fetching link id by discord")
-        .map(|link_id: LinkId| link_id.link_id.cast_unsigned());
+        .await.expect("Database error: fetching link id by discord")
+        .map(|link_id: LinkId| link_id.link_id.cast_unsigned())
 }
 
 #[derive(sqlx::FromRow)]
@@ -274,11 +257,9 @@ struct LinkId {
     link_id: i16,
 }
 
-async fn new_link_id(pool: &Pool<Sqlite>) -> u16 {
-    let result: Result<LinkId, sqlx::Error> = query_as("SELECT MAX(link_id) AS link_id FROM minecraft_links;")
+async fn new_link_id(pool: &Pool<Sqlite>) -> Result<u16, Error> {
+    let result: LinkId = query_as("SELECT MAX(link_id) AS link_id FROM minecraft_links;")
         .fetch_one(pool)
-        .await;
-    result
-        .expect("Database error: fetching new id")
-        .link_id.cast_unsigned() + 1
+        .await?;
+    Ok(result.link_id.cast_unsigned() + 1)
 }

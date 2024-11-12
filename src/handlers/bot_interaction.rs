@@ -1,6 +1,6 @@
 use serenity::all::{ComponentInteraction, ComponentInteractionDataKind, Context, CreateMessage, EditMessage, GuildId, Interaction, RoleId};
 
-use crate::Error;
+use crate::error::Error;
 
 pub(crate) async fn component(ctx: &Context, interaction: &Interaction) -> Result<(), Error> {
     let component = interaction.clone().message_component().unwrap();
