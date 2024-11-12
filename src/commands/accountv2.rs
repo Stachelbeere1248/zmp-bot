@@ -5,6 +5,7 @@ use serenity::{
     all::{ChannelId, CreateActionRow, CreateAllowedMentions, CreateButton, CreateMessage, ReactionType, User},
     json::JsonError,
 };
+use serenity::all::ButtonStyle;
 use sqlx::{query_as, Pool, Sqlite};
 
 use crate::commands::command_helper::cooldown;
@@ -212,9 +213,9 @@ pub(crate) async fn add<'a>(
                         .content(s)
                         .allowed_mentions(CreateAllowedMentions::new().empty_roles().all_users(true))
                         .components(vec![CreateActionRow::Buttons(vec![
-                            CreateButton::new("accept_verification").emoji(ReactionType::from('✅')),
-                            CreateButton::new("deny_verification").emoji(ReactionType::from('❌')),
-                            CreateButton::new("list_accounts").emoji(ReactionType::from('📜')),
+                            CreateButton::new("accept_verification").emoji(ReactionType::from('✅')).style(ButtonStyle::Primary),
+                            CreateButton::new("deny_verification").emoji(ReactionType::from('❌')).style(ButtonStyle::Primary),
+                            CreateButton::new("list_accounts").emoji(ReactionType::from('📜')).style(ButtonStyle::Secondary),
                         ])]),
                 )
                 .await?;

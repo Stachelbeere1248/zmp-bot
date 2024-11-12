@@ -50,6 +50,7 @@ async fn button(ctx: &Context, mut interaction: ComponentInteraction, data: &Dat
                             .disabled(true),
                         CreateButton::new("deny_verification")
                             .emoji(ReactionType::from('❌'))
+                            .style(ButtonStyle::Secondary)
                             .disabled(true),
                         CreateButton::new("list_accounts").emoji(ReactionType::from('📜')),
                     ])]),
@@ -68,6 +69,7 @@ async fn button(ctx: &Context, mut interaction: ComponentInteraction, data: &Dat
                     EditMessage::new().components(vec![CreateActionRow::Buttons(vec![
                         CreateButton::new("accept_verification")
                             .emoji(ReactionType::from('✅'))
+                            .style(ButtonStyle::Secondary)
                             .disabled(true),
                         CreateButton::new("deny_verification")
                             .emoji(ReactionType::from('❌'))
