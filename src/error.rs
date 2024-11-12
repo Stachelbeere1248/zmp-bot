@@ -5,7 +5,7 @@ pub enum Error {
     ParsingError(serde_json::Error),
     SerenityError(serenity::Error),
     OnCooldown(std::time::Duration),
-    Other(String)
+    Other(String),
 }
 
 impl std::fmt::Display for Error {
@@ -15,7 +15,9 @@ impl std::fmt::Display for Error {
             Error::HttpsError(e) => write!(f, "HTTPS Error (Hypixel / Mojang API):\n{}", e),
             Error::ParsingError(e) => write!(f, "Parsing Error:\n {}", e),
             Error::SerenityError(e) => write!(f, "Serenity Error:\n {}", e),
-            Error::OnCooldown(d) => write!(f, "This command is on cooldown. {}s remaining.", d.as_secs()),
+            Error::OnCooldown(d) => {
+                write!(f, "This command is on cooldown. {}s remaining.", d.as_secs())
+            }
             Error::Other(s) => write!(f, "{}", s),
         }
     }

@@ -5,24 +5,24 @@ use std::convert::Into;
 use std::sync::Arc;
 use std::time::Duration;
 
-use poise::{CreateReply, FrameworkError, serenity_prelude as serenity};
-use serenity::{FullEvent, model::id::UserId};
+use poise::{serenity_prelude as serenity, CreateReply, FrameworkError};
 use serenity::all::{ActivityData, InteractionType, RoleId};
 use serenity::prelude::GatewayIntents;
+use serenity::{model::id::UserId, FullEvent};
 use sqlx::Sqlite;
 use tokio::sync::RwLock;
+
 use error::Error;
 
 mod commands;
-mod handlers;
 mod error;
+mod handlers;
 
 struct Data {
     bots: Arc<RwLock<u8>>,
     sqlite_pool: sqlx::Pool<Sqlite>,
     hypixel_api_client: reqwest::Client,
 } // User data, which is stored and accessible in all command invocations
-
 
 type Context<'a> = poise::Context<'a, Data, Error>;
 #[tokio::main]
@@ -35,14 +35,8 @@ async fn main() {
     let hypixel_api: String = std::env::var("HYPIXEL_API_KEY").unwrap();
     let hypixel_api_client = {
         let mut headers = reqwest::header::HeaderMap::new();
-        headers.insert(
-            "API-Key",
-            reqwest::header::HeaderValue::try_from(hypixel_api).unwrap(),
-        );
-        reqwest::ClientBuilder::new()
-            .default_headers(headers)
-            .build()
-            .unwrap()
+        headers.insert("API-Key", reqwest::header::HeaderValue::try_from(hypixel_api).unwrap());
+        reqwest::ClientBuilder::new().default_headers(headers).build().unwrap()
     };
 
     let options = poise::FrameworkOptions {
@@ -64,9 +58,14 @@ async fn main() {
             Box::pin(async move {
                 match error {
                     FrameworkError::CommandStructureMismatch { description, ctx, .. } => {
-                        if let Err(e) = ctx.send(CreateReply::default()
-                            .content(format!("# Command arguments did not match. The command probably has been updated recently. Try reloading Discord. Description:\n{}", description)))
-                            .await {
+                        if let Err(e) = ctx
+                            .send(CreateReply::default().content(format!(
+                                "# Command arguments did not match. The command probably has been updated recently. Try reloading \
+                                 Discord. Description:\n{}",
+                                description
+                            )))
+                            .await
+                        {
                             tracing::error!("Fatal error while sending error message: {}", e);
                         }
                     }
@@ -79,9 +78,7 @@ async fn main() {
             })
         },
         owners: { HashSet::from([UserId::new(449579075531440128_u64), UserId::new(659112817508745216_u64)]) },
-        event_handler: |_ctx, event, _framework, _data| {
-            Box::pin(event_handler(_ctx, event, _framework, _data))
-        },
+        event_handler: |ctx, event, framework, data| Box::pin(event_handler(ctx, event, framework, data)),
         ..Default::default()
     };
 
@@ -100,8 +97,7 @@ async fn main() {
         .build();
 
     let token = std::env::var("DISCORD_TOKEN").unwrap();
-    let intents =
-        GatewayIntents::non_privileged() | GatewayIntents::MESSAGE_CONTENT | GatewayIntents::GUILD_MEMBERS;
+    let intents = GatewayIntents::non_privileged() | GatewayIntents::MESSAGE_CONTENT | GatewayIntents::GUILD_MEMBERS;
     let client = serenity::ClientBuilder::new(token, intents)
         .framework(framework)
         .activity(ActivityData::custom("NPC moment..."))
@@ -112,7 +108,7 @@ async fn event_handler(
     ctx: &serenity::Context,
     event: &FullEvent,
     _framework: poise::FrameworkContext<'_, Data, Error>,
-    _data: &Data,
+    data: &Data,
 ) -> Result<(), Error> {
     match event {
         FullEvent::Ready { data_about_bot, .. } => {
@@ -126,9 +122,8 @@ async fn event_handler(
             }
         }
         FullEvent::InteractionCreate { interaction } => {
-            if interaction.application_id().get() == 1165594074473037824
-                && interaction.kind() == InteractionType::Component {
-                handlers::bot_interaction::component(ctx, interaction).await?;
+            if interaction.application_id().get() == 1165594074473037824 && interaction.kind() == InteractionType::Component {
+                handlers::bot_interaction::component(ctx, interaction, data).await?;
             }
         }
         FullEvent::Message { new_message } => {
