@@ -204,7 +204,7 @@ pub(crate) async fn add<'a>(
                     }
                 },
             };
-            let s = format!("Verification request for {} with IGN `{}`", user.id.get(), ign);
+            let s = format!("Verification request for <@{}> with IGN `{}`", user.id.get(), ign);
             ChannelId::new(1257776992497959075)
                 .send_message(
                     ctx,
