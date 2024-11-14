@@ -1,3 +1,4 @@
+use serenity::all::{ButtonStyle, ComponentInteraction};
 use serenity::all::ButtonStyle::Success;
 use serenity::all::ComponentInteractionDataKind;
 use serenity::all::Context;
@@ -11,10 +12,9 @@ use serenity::all::GuildId;
 use serenity::all::Interaction;
 use serenity::all::ReactionType;
 use serenity::all::RoleId;
-use serenity::all::{ButtonStyle, ComponentInteraction};
 
-use crate::error::Error;
 use crate::Data;
+use crate::error::Error;
 
 pub(crate) async fn component(ctx: &Context, interaction: &Interaction, data: &Data) -> Result<(), Error> {
     let component = interaction.clone().message_component().unwrap();

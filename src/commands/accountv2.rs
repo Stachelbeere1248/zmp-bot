@@ -6,11 +6,11 @@ use serenity::{
     json::JsonError,
 };
 use serenity::all::ButtonStyle;
-use sqlx::{query_as, Pool, Sqlite};
+use sqlx::{Pool, query_as, Sqlite};
 
 use crate::commands::command_helper::cooldown;
-use crate::error::Error;
 use crate::Context;
+use crate::error::Error;
 
 #[derive(Deserialize)]
 struct Links {
@@ -145,7 +145,7 @@ pub(crate) async fn add<'a>(
     #[max_length = 16]
     ign: String,
     #[description = "Discord User"] user: Option<User>,
-    #[description = "Minecraft username"] force: Option<bool>,
+    #[description = "admin-only"] force: Option<bool>,
 ) -> Result<(), Error> {
     ctx.defer_ephemeral().await?;
     let user: User = user.unwrap_or(ctx.author().clone());
@@ -187,20 +187,20 @@ pub(crate) async fn add<'a>(
                                 mc_id.cast_signed(),
                                 dc_id.cast_signed()
                             )
-                            .as_str(),
+                                .as_str(),
                         )
-                        .execute(&pool)
-                        .await?;
+                            .execute(&pool)
+                            .await?;
                         sqlx::query(
                             format!(
                                 "UPDATE discord_links SET link_id = {} WHERE link_id = {};",
                                 mc_id.cast_signed(),
                                 dc_id.cast_signed()
                             )
-                            .as_str(),
+                                .as_str(),
                         )
-                        .execute(&pool)
-                        .await?;
+                            .execute(&pool)
+                            .await?;
                         "Both your Discord and Minecraft account had linked accounts. Merged all account links."
                     }
                 },
@@ -213,9 +213,15 @@ pub(crate) async fn add<'a>(
                         .content(s)
                         .allowed_mentions(CreateAllowedMentions::new().empty_roles().all_users(true))
                         .components(vec![CreateActionRow::Buttons(vec![
-                            CreateButton::new("accept_verification").emoji(ReactionType::from('✅')).style(ButtonStyle::Primary),
-                            CreateButton::new("deny_verification").emoji(ReactionType::from('❌')).style(ButtonStyle::Primary),
-                            CreateButton::new("list_accounts").emoji(ReactionType::from('📜')).style(ButtonStyle::Secondary),
+                            CreateButton::new("accept_verification")
+                                .emoji(ReactionType::from('✅'))
+                                .style(ButtonStyle::Primary),
+                            CreateButton::new("deny_verification")
+                                .emoji(ReactionType::from('❌'))
+                                .style(ButtonStyle::Primary),
+                            CreateButton::new("list_accounts")
+                                .emoji(ReactionType::from('📜'))
+                                .style(ButtonStyle::Secondary),
                         ])]),
                 )
                 .await?;
@@ -242,7 +248,7 @@ pub(crate) async fn list(ctx: Context<'_>, user: Option<User>) -> Result<(), Err
         r.content(s)
             .allowed_mentions(CreateAllowedMentions::new().empty_roles().empty_users()),
     )
-    .await?;
+        .await?;
     Ok(())
 }
 
@@ -285,12 +291,12 @@ async fn link_id_from_discord(pool: &Pool<Sqlite>, snowflake: u64) -> Option<u16
             "SELECT link_id FROM discord_links WHERE discord_id = {} LIMIT 1;",
             snowflake.cast_signed()
         )
-        .as_str(),
+            .as_str(),
     )
-    .fetch_optional(pool)
-    .await
-    .expect("Database error: fetching link id by discord")
-    .map(|link_id: LinkId| link_id.link_id.cast_unsigned())
+        .fetch_optional(pool)
+        .await
+        .expect("Database error: fetching link id by discord")
+        .map(|link_id: LinkId| link_id.link_id.cast_unsigned())
 }
 
 #[derive(sqlx::FromRow)]

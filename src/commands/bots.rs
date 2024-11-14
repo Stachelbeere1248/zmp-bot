@@ -2,8 +2,8 @@ use std::string::String;
 
 use poise::CreateReply;
 
-use crate::error::Error;
 use crate::Context;
+use crate::error::Error;
 
 #[poise::command(slash_command, guild_only, owners_only)]
 pub(crate) async fn bots(

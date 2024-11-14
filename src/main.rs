@@ -5,10 +5,10 @@ use std::convert::Into;
 use std::sync::Arc;
 use std::time::Duration;
 
-use poise::{serenity_prelude as serenity, CreateReply, FrameworkError};
+use poise::serenity_prelude as serenity;
+use serenity::{FullEvent, model::id::UserId};
 use serenity::all::{ActivityData, InteractionType, RoleId};
 use serenity::prelude::GatewayIntents;
-use serenity::{model::id::UserId, FullEvent};
 use sqlx::Sqlite;
 use tokio::sync::RwLock;
 
@@ -56,25 +56,7 @@ async fn main() {
         },
         on_error: |error| {
             Box::pin(async move {
-                match error {
-                    FrameworkError::CommandStructureMismatch { description, ctx, .. } => {
-                        if let Err(e) = ctx
-                            .send(CreateReply::default().content(format!(
-                                "# Command arguments did not match. The command probably has been updated recently. Try reloading \
-                                 Discord. Description:\n{}",
-                                description
-                            )))
-                            .await
-                        {
-                            tracing::error!("Fatal error while sending error message: {}", e);
-                        }
-                    }
-                    other => {
-                        if let Err(e) = poise::builtins::on_error(other).await {
-                            tracing::error!("Fatal error while sending error message: {}", e);
-                        }
-                    }
-                }
+                error::handle_error(error).await;
             })
         },
         owners: { HashSet::from([UserId::new(449579075531440128_u64), UserId::new(659112817508745216_u64)]) },
@@ -104,6 +86,7 @@ async fn main() {
         .await;
     client.unwrap().start_autosharded().await.unwrap()
 }
+
 async fn event_handler(
     ctx: &serenity::Context,
     event: &FullEvent,

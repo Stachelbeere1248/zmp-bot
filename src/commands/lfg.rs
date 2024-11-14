@@ -7,8 +7,8 @@ use crate::commands::command_helper::cooldown;
 use crate::commands::lfg::Difficulty::Normal;
 use crate::commands::lfg::Map::*;
 use crate::commands::lfg::Mode::*;
-use crate::error::Error;
 use crate::Context;
+use crate::error::Error;
 
 #[derive(Debug, poise::ChoiceParameter, PartialEq)]
 pub enum Map {
@@ -96,7 +96,7 @@ pub(crate) async fn lfg(
         AlienArcadium => Normal,
     };
 
-    let mut reply_content: String = format!("<@&{ping}> {current}/{desired} {map_name}",);
+    let mut reply_content: String = format!("<@&{ping}> {current}/{desired} {map_name}", );
     match difficulty {
         Normal => {}
         Difficulty::Hard | Difficulty::Rip => {
