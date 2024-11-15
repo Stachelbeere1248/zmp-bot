@@ -131,7 +131,7 @@ impl Link {
         Ok(self)
     }
 }
-#[poise::command(slash_command, subcommands("add", "list"))]
+#[poise::command(slash_command, subcommands("add", "list", "context_list"))]
 pub(crate) async fn account(_ctx: Context<'_>) -> Result<(), Error> {
     // root of slash-commands is not invokable.
     unreachable!()
