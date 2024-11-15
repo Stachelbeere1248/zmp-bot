@@ -5,7 +5,7 @@ use serenity::{
     all::{ChannelId, CreateActionRow, CreateAllowedMentions, CreateButton, CreateMessage, ReactionType, User},
     json::JsonError,
 };
-use serenity::all::ButtonStyle;
+use serenity::all::{ButtonStyle, Message};
 use sqlx::{Pool, query_as, Sqlite};
 
 use crate::commands::command_helper::cooldown;
@@ -252,6 +252,21 @@ pub(crate) async fn list(ctx: Context<'_>, user: Option<User>) -> Result<(), Err
     Ok(())
 }
 
+#[poise::command(context_menu_command="list accounts")]
+pub(crate) async fn context_list(ctx: Context<'_>, m: Message) -> Result<(), Error> {
+    ctx.defer_ephemeral().await?;
+    cooldown(&ctx, 600, 300)?;
+    let pool: &Pool<Sqlite> = &ctx.data().sqlite_pool;
+    let s: String = list_string(pool, &m.author).await?;
+    let r: CreateReply = CreateReply::default().ephemeral(true);
+    ctx.send(
+        r.content(s)
+            .allowed_mentions(CreateAllowedMentions::new().empty_roles().empty_users()),
+    )
+        .await?;
+    Ok(())
+}
+
 pub(crate) async fn list_string(pool: &Pool<Sqlite>, user: &User) -> Result<String, Error> {
     let link_id: u16 = link_id_from_discord(pool, user.id.get())
         .await
@@ -295,7 +310,7 @@ async fn link_id_from_discord(pool: &Pool<Sqlite>, snowflake: u64) -> Option<u16
     )
         .fetch_optional(pool)
         .await
-        .expect("Database error: fetching link id by discord")
+        .expect("Database error: fetching link_id for discord_id")
         .map(|link_id: LinkId| link_id.link_id.cast_unsigned())
 }
 
