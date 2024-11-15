@@ -253,11 +253,11 @@ pub(crate) async fn list(ctx: Context<'_>, user: Option<User>) -> Result<(), Err
 }
 
 #[poise::command(context_menu_command="Account list")]
-pub(crate) async fn context_list(ctx: Context<'_>, m: Message) -> Result<(), Error> {
+pub(crate) async fn context_list(ctx: Context<'_>, u: User) -> Result<(), Error> {
     ctx.defer_ephemeral().await?;
     cooldown(&ctx, 600, 300)?;
     let pool: &Pool<Sqlite> = &ctx.data().sqlite_pool;
-    let s: String = list_string(pool, &m.author).await?;
+    let s: String = list_string(pool, &u).await?;
     ctx.send(
         CreateReply::default()
             .content(s)
