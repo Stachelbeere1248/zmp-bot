@@ -131,7 +131,7 @@ impl Link {
         Ok(self)
     }
 }
-#[poise::command(slash_command, subcommands("add", "list", "context_list"))]
+#[poise::command(slash_command, subcommands("add", "list"))]
 pub(crate) async fn account(_ctx: Context<'_>) -> Result<(), Error> {
     // root of slash-commands is not invokable.
     unreachable!()
@@ -252,18 +252,18 @@ pub(crate) async fn list(ctx: Context<'_>, user: Option<User>) -> Result<(), Err
     Ok(())
 }
 
-#[poise::command(context_menu_command="list accounts")]
+#[poise::command(context_menu_command="Account list")]
 pub(crate) async fn context_list(ctx: Context<'_>, m: Message) -> Result<(), Error> {
     ctx.defer_ephemeral().await?;
     cooldown(&ctx, 600, 300)?;
     let pool: &Pool<Sqlite> = &ctx.data().sqlite_pool;
     let s: String = list_string(pool, &m.author).await?;
-    let r: CreateReply = CreateReply::default().ephemeral(true);
     ctx.send(
-        r.content(s)
-            .allowed_mentions(CreateAllowedMentions::new().empty_roles().empty_users()),
-    )
-        .await?;
+        CreateReply::default()
+            .content(s)
+            .allowed_mentions(CreateAllowedMentions::new().empty_roles().empty_users())
+            .ephemeral(true)
+    ).await?;
     Ok(())
 }
 

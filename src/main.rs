@@ -48,6 +48,7 @@ async fn main() {
             commands::helpstart::helpstart(),
             commands::bots::bots(),
             commands::accountv2::account(),
+            commands::accountv2::context_list(),
         ],
         manual_cooldowns: true,
         prefix_options: poise::PrefixFrameworkOptions {
@@ -96,7 +97,7 @@ async fn event_handler(
     match event {
         FullEvent::Ready { data_about_bot, .. } => {
             println!("Logged in as {}", data_about_bot.user.name);
-        }
+        },
         FullEvent::GuildMemberAddition { new_member } => {
             println!("join event");
             if new_member.guild_id.get() == 1256217633959841853_u64 {
@@ -108,13 +109,13 @@ async fn event_handler(
             if interaction.application_id().get() == 1165594074473037824 && interaction.kind() == InteractionType::Component {
                 handlers::bot_interaction::component(ctx, interaction, data).await?;
             }
-        }
+        },
         FullEvent::Message { new_message } => {
             handlers::message::on_create(ctx, new_message).await?;
-        }
+        },
         FullEvent::ThreadCreate { thread } => {
             handlers::thread::on_create(ctx, thread).await?;
-        }
+        },
         _ => {}
     }
     Ok(())
