@@ -11,7 +11,7 @@ serenity = { version = "0.12.1", default-features = false,  features = ["client"
 tokio = { version = "1.41.1", features = ["macros", "rt-multi-thread", "rt"] }
 env_logger = "0.11.3"
 anyhow = "1.0.93"
-tracing = "0.1.40"
+tracing = "0.1.41"
 regex = "1.11.1"
 sqlx = { version = "0.8.2", features = ["sqlite", "sqlx-sqlite", "runtime-tokio"]}
 reqwest = { version = "0.12.5" }
