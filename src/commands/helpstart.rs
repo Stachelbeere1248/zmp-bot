@@ -5,7 +5,12 @@ use crate::commands::command_helper;
 use crate::Context;
 use crate::error::Error;
 
-#[poise::command(slash_command, guild_only)]
+#[poise::command(
+    slash_command,
+    install_context = "Guild",
+    interaction_context = "Guild",
+    ephemeral = "false",
+)]
 pub(crate) async fn helpstart(
     ctx: Context<'_>,
     #[min = 1_u8]
@@ -34,8 +39,6 @@ pub(crate) async fn helpstart(
             .ephemeral(false)
             .allowed_mentions(CreateAllowedMentions::new().roles(vec![ping]))
     };
-    if let Err(why) = ctx.send(reply).await {
-        println!("Error sending message: {why}")
-    }
+    ctx.send(reply).await?;
     Ok(())
 }

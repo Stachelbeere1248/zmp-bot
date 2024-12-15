@@ -3,9 +3,8 @@ use reqwest::{Client, Response};
 use serde::Deserialize;
 use serenity::{
     all::{ChannelId, CreateActionRow, CreateAllowedMentions, CreateButton, CreateMessage, ReactionType, User},
-    json::JsonError,
 };
-use serenity::all::{ButtonStyle, Message};
+use serenity::all::{ButtonStyle};
 use sqlx::{Pool, query_as, Sqlite};
 
 use crate::commands::command_helper::cooldown;
@@ -45,34 +44,21 @@ impl Uuid {
     fn get(&self) -> &str {
         self.uuid.as_str()
     }
-    async fn fetch(ign: &str) -> Result<Self, Error> {
+    async fn for_ign(ign: &str) -> Result<Self, Error> {
         let url: String = format!("https://api.mojang.com/users/profiles/minecraft/{ign}");
-        let response: Response = reqwest::get(url).await?;
-        let response_text = response.error_for_status()?.text().await.unwrap();
-        let uuid = (serde_json::from_str(response_text.as_str()) as Result<MojangPlayer, JsonError>)
-            .map(|mojang_player: MojangPlayer| Uuid { uuid: mojang_player.id })?;
+        let response_400: Response = reqwest::get(url).await?.error_for_status()?;
+        let deserialized = response_400.json::<MojangPlayer>().await?;
+        let uuid = Uuid {
+            uuid: deserialized.id,
+        };
         Ok(uuid)
-        /*match response.error_for_status() {
-            Ok(res) => {
-                let response_text = res.text().await.unwrap();
-                let uuid = (serde_json::from_str(response_text.as_str())
-                    as Result<MojangPlayer, JsonError>)
-                    .map(|mojang_player: MojangPlayer| Uuid { uuid: mojang_player.id })?;
-                Ok(uuid)
-            }
-            Err(why) => Err(Error::from(format!(
-                "Mojang returned an error. Please make sure to enter a valid Minecraft username.\n\n\
-                Details: {}", why).as_str())),
-        }*/
     }
 
     async fn ign(&self) -> Result<String, Error> {
         let url: String = format!("https://sessionserver.mojang.com/session/minecraft/profile/{}", self.uuid);
-        let response: Response = reqwest::get(url).await?;
-        let response_text = response.error_for_status()?.text().await.unwrap();
-        let ign = (serde_json::from_str(response_text.as_str()) as Result<MojangPlayer, JsonError>)
-            .map(|mojang_player: MojangPlayer| mojang_player.name)?;
-        Ok(ign)
+        let response_400: Response = reqwest::get(url).await?.error_for_status()?;
+        let deserialized = response_400.json::<MojangPlayer>().await?;
+        Ok(deserialized.name)
     }
 }
 #[derive(PartialEq)]
@@ -82,10 +68,9 @@ struct DiscordId {
 impl DiscordId {
     async fn matches_fetch(user: &User, uuid: &str, client: &Client) -> Result<bool, Error> {
         let url: String = format!("https://api.hypixel.net/v2/player?uuid={}", uuid);
-        let response: Response = client.get(url).send().await?;
-        let response_text = response.error_for_status()?.text().await.unwrap();
-        let matches = (serde_json::from_str(response_text.as_str()) as Result<HypixelResponse, JsonError>)
-            .map(|hypixel_response: HypixelResponse| user.name == hypixel_response.player.social_media.links.discord)?;
+        let response_400: Response = client.get(url).send().await?.error_for_status()?;
+        let deserialized = response_400.json::<HypixelResponse>().await?;
+        let matches = deserialized.player.social_media.links.discord == user.name;
         Ok(matches)
     }
 }
@@ -137,7 +122,12 @@ pub(crate) async fn account(_ctx: Context<'_>) -> Result<(), Error> {
     unreachable!()
 }
 
-#[poise::command(slash_command)]
+#[poise::command(
+    slash_command,
+    install_context = "User|Guild",
+    interaction_context = "Guild|BotDm|PrivateChannel",
+    ephemeral = "false",
+)]
 pub(crate) async fn add<'a>(
     ctx: Context<'_>,
     #[description = "Minecraft username"]
@@ -149,7 +139,7 @@ pub(crate) async fn add<'a>(
 ) -> Result<(), Error> {
     ctx.defer_ephemeral().await?;
     let user: User = user.unwrap_or(ctx.author().clone());
-    let uuid: Uuid = Uuid::fetch(ign.as_str()).await?;
+    let uuid: Uuid = Uuid::for_ign(ign.as_str()).await?;
     let force: bool = force.unwrap_or(false) && ctx.framework().options.owners.contains(&ctx.author().id);
     match DiscordId::matches_fetch(&user, uuid.get(), &ctx.data().hypixel_api_client).await? || force {
         true => {
@@ -215,17 +205,17 @@ pub(crate) async fn add<'a>(
                         .components(vec![CreateActionRow::Buttons(vec![
                             CreateButton::new("accept_verification")
                                 .emoji(ReactionType::from('✅'))
-                                .style(ButtonStyle::Primary),
+                                .style(ButtonStyle::Secondary),
                             CreateButton::new("deny_verification")
                                 .emoji(ReactionType::from('❌'))
-                                .style(ButtonStyle::Primary),
+                                .style(ButtonStyle::Secondary),
                             CreateButton::new("list_accounts")
                                 .emoji(ReactionType::from('📜'))
-                                .style(ButtonStyle::Secondary),
+                                .style(ButtonStyle::Primary),
                         ])]),
                 )
                 .await?;
-            ctx.send(CreateReply::default().ephemeral(false).content(status)).await?;
+            ctx.send(CreateReply::default().content(status)).await?;
             Ok(())
         }
         false => Err(Error::Other(format!(
@@ -236,7 +226,12 @@ pub(crate) async fn add<'a>(
     }
 }
 
-#[poise::command(slash_command)]
+#[poise::command(
+    slash_command,
+    install_context = "User|Guild",
+    interaction_context = "Guild|BotDm|PrivateChannel",
+    ephemeral = "false",
+)]
 pub(crate) async fn list(ctx: Context<'_>, user: Option<User>) -> Result<(), Error> {
     ctx.defer_ephemeral().await?;
     cooldown(&ctx, 600, 300)?;
@@ -252,7 +247,13 @@ pub(crate) async fn list(ctx: Context<'_>, user: Option<User>) -> Result<(), Err
     Ok(())
 }
 
-#[poise::command(context_menu_command="Account list")]
+#[poise::command(
+    slash_command,
+    install_context = "User|Guild",
+    interaction_context = "Guild|PrivateChannel",
+    ephemeral = "false",
+    context_menu_command="Account list"
+)]
 pub(crate) async fn context_list(ctx: Context<'_>, u: User) -> Result<(), Error> {
     ctx.defer_ephemeral().await?;
     cooldown(&ctx, 600, 300)?;
@@ -290,7 +291,7 @@ pub(crate) async fn list_string(pool: &Pool<Sqlite>, user: &User) -> Result<Stri
 
 #[poise::command(slash_command)]
 pub(crate) async fn remove(_ctx: Context<'_>) -> Result<(), Error> {
-    unimplemented!()
+    todo!()
 }
 
 async fn link_id_from_minecraft(pool: &Pool<Sqlite>, minecraft_uuid: &str) -> Option<u16> {

@@ -5,7 +5,13 @@ use poise::CreateReply;
 use crate::Context;
 use crate::error::Error;
 
-#[poise::command(slash_command, guild_only, owners_only)]
+#[poise::command(
+    slash_command,
+    owners_only,
+    install_context = "User",
+    interaction_context = "Guild|BotDm|PrivateChannel",
+    ephemeral = "false",
+)]
 pub(crate) async fn bots(
     ctx: Context<'_>,
     #[min = 0_u8]
@@ -15,6 +21,6 @@ pub(crate) async fn bots(
     ctx.defer_ephemeral().await?;
     *ctx.data().bots.write().await = bots;
     let content = format!("{} bots are now registered as available", bots).to_string();
-    ctx.send(CreateReply::default().content(content).ephemeral(true)).await?;
+    ctx.send(CreateReply::default().content(content)).await?;
     Ok(())
 }

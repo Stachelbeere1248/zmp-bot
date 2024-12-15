@@ -43,7 +43,12 @@ pub enum Difficulty {
     #[name = "R.I.P."]
     Rip,
 }
-#[poise::command(slash_command, guild_only)]
+#[poise::command(
+    slash_command,
+    install_context = "Guild",
+    interaction_context = "Guild",
+    ephemeral = "false",
+)]
 pub(crate) async fn lfg(
     ctx: Context<'_>,
     #[rename = "map"] map: Map,
@@ -115,9 +120,7 @@ pub(crate) async fn lfg(
         .ephemeral(false)
         .allowed_mentions(CreateAllowedMentions::new().roles(vec![ping]));
 
-    if let Err(why) = ctx.send(reply).await {
-        println!("Error sending message: {why}");
-    }
+    ctx.send(reply).await?;
     Ok(())
 }
 #[derive(Debug, poise::ChoiceParameter)]
@@ -133,7 +136,13 @@ enum ExpertMap {
     #[name = "Speedrun"]
     Speedrun,
 }
-#[poise::command(slash_command, guild_only, rename = "lfg-expert")]
+#[poise::command(
+    slash_command,
+    install_context = "Guild",
+    interaction_context = "Guild",
+    ephemeral = "false",
+    rename = "lfg-expert"
+)]
 pub(crate) async fn expert(
     ctx: Context<'_>,
     #[rename = "map"] mode: ExpertMap,
@@ -192,9 +201,7 @@ pub(crate) async fn expert(
             .content("You do not have any of the required expert ranks.")
             .ephemeral(true),
     };
-    if let Err(why) = ctx.send(reply).await {
-        println!("Error sending message: {why}");
-    }
+    ctx.send(reply).await?;
     Ok(())
 }
 
@@ -203,7 +210,13 @@ enum OtherPing {
     #[name = "GeoGuessr"]
     GeoGuessr,
 }
-#[poise::command(slash_command, guild_only, rename = "lfg-other")]
+#[poise::command(
+    slash_command,
+    install_context = "Guild",
+    interaction_context = "Guild",
+    ephemeral = "false",
+    rename = "lfg-other"
+)]
 pub(crate) async fn other(
     ctx: Context<'_>,
     #[rename = "game"] game: OtherPing,
@@ -231,9 +244,7 @@ pub(crate) async fn other(
         .ephemeral(false)
         .allowed_mentions(CreateAllowedMentions::new().roles(vec![ping]));
 
-    if let Err(why) = ctx.send(reply).await {
-        println!("Error sending message: {why}");
-    }
+    ctx.send(reply).await?;
     Ok(())
 }
 

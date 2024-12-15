@@ -96,13 +96,11 @@ async fn event_handler(
 ) -> Result<(), Error> {
     match event {
         FullEvent::Ready { data_about_bot, .. } => {
-            println!("Logged in as {}", data_about_bot.user.name);
+            println!("Logged in as '{}'!", data_about_bot.user.name);
         },
         FullEvent::GuildMemberAddition { new_member } => {
-            println!("join event");
             if new_member.guild_id.get() == 1256217633959841853_u64 {
                 new_member.add_role(ctx, RoleId::new(1256253358701023232_u64)).await?;
-                println!("gave member role");
             }
         }
         FullEvent::InteractionCreate { interaction } => {

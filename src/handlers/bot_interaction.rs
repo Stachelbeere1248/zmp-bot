@@ -1,4 +1,3 @@
-use serenity::all::{ButtonStyle, ComponentInteraction};
 use serenity::all::ButtonStyle::Success;
 use serenity::all::ComponentInteractionDataKind;
 use serenity::all::Context;
@@ -12,9 +11,10 @@ use serenity::all::GuildId;
 use serenity::all::Interaction;
 use serenity::all::ReactionType;
 use serenity::all::RoleId;
+use serenity::all::{ButtonStyle, ComponentInteraction};
 
-use crate::Data;
 use crate::error::Error;
+use crate::Data;
 
 pub(crate) async fn component(ctx: &Context, interaction: &Interaction, data: &Data) -> Result<(), Error> {
     let component = interaction.clone().message_component().unwrap();
@@ -29,9 +29,6 @@ async fn button(ctx: &Context, mut interaction: ComponentInteraction, data: &Dat
     let u = m.mentions.first().expect("Message did not mention a user.");
     match interaction.data.custom_id.as_str() {
         "accept_verification" => {
-            let _dm = u
-                .direct_message(ctx, CreateMessage::new().content("Your verified minecraft account was approved."))
-                .await?;
             let member = m
                 .guild_id
                 .unwrap_or(GuildId::new(1256217633959841853_u64))
@@ -39,6 +36,9 @@ async fn button(ctx: &Context, mut interaction: ComponentInteraction, data: &Dat
                 .await?;
             member.add_role(ctx, RoleId::new(1256218805911425066_u64)).await?;
             member.remove_role(ctx, RoleId::new(1256253358701023232_u64)).await?;
+            let _dm = u
+                .direct_message(ctx, CreateMessage::new().content("Your verified minecraft account was approved."))
+                .await?;
             interaction
                 .message
                 .edit(
@@ -52,7 +52,9 @@ async fn button(ctx: &Context, mut interaction: ComponentInteraction, data: &Dat
                             .emoji(ReactionType::from('❌'))
                             .style(ButtonStyle::Secondary)
                             .disabled(true),
-                        CreateButton::new("list_accounts").emoji(ReactionType::from('📜')),
+                        CreateButton::new("list_accounts")
+                            .emoji(ReactionType::from('📜'))
+                            .style(ButtonStyle::Primary),
                     ])]),
                 )
                 .await?;
@@ -75,7 +77,9 @@ async fn button(ctx: &Context, mut interaction: ComponentInteraction, data: &Dat
                             .emoji(ReactionType::from('❌'))
                             .style(ButtonStyle::Danger)
                             .disabled(true),
-                        CreateButton::new("list_accounts").emoji(ReactionType::from('📜')),
+                        CreateButton::new("list_accounts")
+                            .emoji(ReactionType::from('📜'))
+                            .style(ButtonStyle::Primary),
                     ])]),
                 )
                 .await?;
