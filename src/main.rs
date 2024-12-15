@@ -48,7 +48,6 @@ async fn main() {
             commands::helpstart::helpstart(),
             commands::bots::bots(),
             commands::accountv2::account(),
-            commands::accountv2::context_list(),
         ],
         manual_cooldowns: true,
         prefix_options: poise::PrefixFrameworkOptions {

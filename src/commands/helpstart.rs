@@ -11,6 +11,7 @@ use crate::error::Error;
     interaction_context = "Guild",
     ephemeral = "false",
 )]
+/// Ping the @helpstart to fill a queue.
 pub(crate) async fn helpstart(
     ctx: Context<'_>,
     #[min = 1_u8]

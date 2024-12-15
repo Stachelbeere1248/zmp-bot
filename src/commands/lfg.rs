@@ -49,6 +49,7 @@ pub enum Difficulty {
     interaction_context = "Guild",
     ephemeral = "false",
 )]
+/// Find a team for Hypixel Zombies.
 pub(crate) async fn lfg(
     ctx: Context<'_>,
     #[rename = "map"] map: Map,
@@ -143,6 +144,7 @@ enum ExpertMap {
     ephemeral = "false",
     rename = "lfg-expert"
 )]
+/// Find a team of skilled players.
 pub(crate) async fn expert(
     ctx: Context<'_>,
     #[rename = "map"] mode: ExpertMap,
@@ -217,6 +219,7 @@ enum OtherPing {
     ephemeral = "false",
     rename = "lfg-other"
 )]
+/// Find people to play other games with.
 pub(crate) async fn other(
     ctx: Context<'_>,
     #[rename = "game"] game: OtherPing,

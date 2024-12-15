@@ -12,6 +12,7 @@ use crate::error::Error;
     interaction_context = "Guild|BotDm|PrivateChannel",
     ephemeral = "false",
 )]
+/// Change how many helpstart bots are online, to limit usage of helpstart pings.
 pub(crate) async fn bots(
     ctx: Context<'_>,
     #[min = 0_u8]

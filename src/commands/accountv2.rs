@@ -128,6 +128,7 @@ pub(crate) async fn account(_ctx: Context<'_>) -> Result<(), Error> {
     interaction_context = "Guild|BotDm|PrivateChannel",
     ephemeral = "false",
 )]
+/// Verify a Minecraft account on the Zombies MultiPlayer Discord.
 pub(crate) async fn add<'a>(
     ctx: Context<'_>,
     #[description = "Minecraft username"]
@@ -230,35 +231,15 @@ pub(crate) async fn add<'a>(
     slash_command,
     install_context = "User|Guild",
     interaction_context = "Guild|BotDm|PrivateChannel",
-    ephemeral = "false",
-)]
-pub(crate) async fn list(ctx: Context<'_>, user: Option<User>) -> Result<(), Error> {
-    ctx.defer().await?;
-    cooldown(&ctx, 600, 300)?;
-    let user: User = user.unwrap_or(ctx.author().clone());
-    let pool: &Pool<Sqlite> = &ctx.data().sqlite_pool;
-    let s: String = list_string(pool, &user).await?;
-    let r: CreateReply = CreateReply::default();
-    ctx.send(
-        r.content(s)
-            .allowed_mentions(CreateAllowedMentions::new().empty_roles().empty_users()),
-    )
-        .await?;
-    Ok(())
-}
-
-#[poise::command(
-    slash_command,
-    install_context = "User|Guild",
-    interaction_context = "Guild|PrivateChannel",
     ephemeral = "true",
     context_menu_command="Account list"
 )]
-pub(crate) async fn context_list(ctx: Context<'_>, u: User) -> Result<(), Error> {
+/// List a users linked minecraft Accounts.
+pub(crate) async fn list(ctx: Context<'_>, user: User) -> Result<(), Error> {
     ctx.defer().await?;
     cooldown(&ctx, 600, 300)?;
     let pool: &Pool<Sqlite> = &ctx.data().sqlite_pool;
-    let s: String = list_string(pool, &u).await?;
+    let s: String = list_string(pool, &user).await?;
     ctx.send(
         CreateReply::default()
             .content(s)
