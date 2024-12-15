@@ -137,7 +137,7 @@ pub(crate) async fn add<'a>(
     #[description = "Discord User"] user: Option<User>,
     #[description = "admin-only"] force: Option<bool>,
 ) -> Result<(), Error> {
-    ctx.defer_ephemeral().await?;
+    ctx.defer().await?;
     let user: User = user.unwrap_or(ctx.author().clone());
     let uuid: Uuid = Uuid::for_ign(ign.as_str()).await?;
     let force: bool = force.unwrap_or(false) && ctx.framework().options.owners.contains(&ctx.author().id);
@@ -233,12 +233,12 @@ pub(crate) async fn add<'a>(
     ephemeral = "false",
 )]
 pub(crate) async fn list(ctx: Context<'_>, user: Option<User>) -> Result<(), Error> {
-    ctx.defer_ephemeral().await?;
+    ctx.defer().await?;
     cooldown(&ctx, 600, 300)?;
     let user: User = user.unwrap_or(ctx.author().clone());
     let pool: &Pool<Sqlite> = &ctx.data().sqlite_pool;
     let s: String = list_string(pool, &user).await?;
-    let r: CreateReply = CreateReply::default().ephemeral(false);
+    let r: CreateReply = CreateReply::default();
     ctx.send(
         r.content(s)
             .allowed_mentions(CreateAllowedMentions::new().empty_roles().empty_users()),
@@ -251,11 +251,11 @@ pub(crate) async fn list(ctx: Context<'_>, user: Option<User>) -> Result<(), Err
     slash_command,
     install_context = "User|Guild",
     interaction_context = "Guild|PrivateChannel",
-    ephemeral = "false",
+    ephemeral = "true",
     context_menu_command="Account list"
 )]
 pub(crate) async fn context_list(ctx: Context<'_>, u: User) -> Result<(), Error> {
-    ctx.defer_ephemeral().await?;
+    ctx.defer().await?;
     cooldown(&ctx, 600, 300)?;
     let pool: &Pool<Sqlite> = &ctx.data().sqlite_pool;
     let s: String = list_string(pool, &u).await?;
@@ -263,7 +263,6 @@ pub(crate) async fn context_list(ctx: Context<'_>, u: User) -> Result<(), Error>
         CreateReply::default()
             .content(s)
             .allowed_mentions(CreateAllowedMentions::new().empty_roles().empty_users())
-            .ephemeral(true)
     ).await?;
     Ok(())
 }
