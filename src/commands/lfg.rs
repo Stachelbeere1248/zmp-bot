@@ -102,7 +102,7 @@ pub(crate) async fn lfg(
         AlienArcadium => Normal,
     };
 
-    let mut reply_content: String = format!("<@&{ping}> {current}/{desired} {map_name}", );
+    let mut reply_content: String = format!("## <@&{ping}> {current}/{desired} {map_name}", );
     match difficulty {
         Normal => {}
         Difficulty::Hard | Difficulty::Rip => {
@@ -113,7 +113,7 @@ pub(crate) async fn lfg(
     match note {
         None => {}
         Some(note) => {
-            reply_content.push_str(format!("\nNote: {note}").as_str());
+            reply_content.push_str(format!("\n**Note:** {note}").as_str());
         }
     }
     let reply: CreateReply = CreateReply::default()
@@ -193,7 +193,7 @@ pub(crate) async fn expert(
         .roles
         .iter()
         .any(|user_role: &RoleId| allowed_roles.contains(&user_role.get()));
-    let reply_content: String = format!("{current}/{desired} <@&{ping}>: {note}");
+    let reply_content: String = format!("## {current}/{desired} <@&{ping}>: {note}");
     let reply: CreateReply = match is_expert {
         true => CreateReply::default()
             .content(reply_content)
@@ -240,7 +240,7 @@ pub(crate) async fn other(
     let ping: u64 = match game {
         OtherPing::GeoGuessr => 1302249562999885824_u64,
     };
-    let reply_content: String = format!("{current}/{desired} <@&{ping}>: {note}");
+    let reply_content: String = format!("## {current}/{desired} <@&{ping}>: {note}");
 
     let reply: CreateReply = CreateReply::default()
         .content(reply_content)

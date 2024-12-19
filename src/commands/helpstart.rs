@@ -36,7 +36,7 @@ pub(crate) async fn helpstart(
     } else {
         command_helper::cooldown(&ctx, 1200, 600)?;
         reply
-            .content(format!("<@&{ping}>\nneed: {}", needed_players - bots))
+            .content(format!("## <@&{ping}>\nneed: {}", needed_players - bots))
             .ephemeral(false)
             .allowed_mentions(CreateAllowedMentions::new().roles(vec![ping]))
     };

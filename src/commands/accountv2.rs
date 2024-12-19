@@ -1,3 +1,4 @@
+use std::ops::Add;
 use poise::CreateReply;
 use reqwest::{Client, Response};
 use serde::Deserialize;
@@ -65,9 +66,9 @@ impl Uuid {
 struct DiscordId {
     id: u64,
 }
-impl DiscordId {
-    async fn matches_fetch(user: &User, uuid: &str, client: &Client) -> Result<bool, Error> {
-        let url: String = format!("https://api.hypixel.net/v2/player?uuid={}", uuid);
+impl Uuid {
+    async fn has_discord_user(&self, user: &User, client: &Client) -> Result<bool, Error> {
+        let url: String = format!("https://api.hypixel.net/v2/player?uuid={}", self.uuid);
         let response_400: Response = client.get(url).send().await?.error_for_status()?;
         let deserialized = response_400.json::<HypixelResponse>().await?;
         let matches = deserialized.player.social_media.links.discord == user.name;
@@ -142,32 +143,32 @@ pub(crate) async fn add<'a>(
     let user: User = user.unwrap_or(ctx.author().clone());
     let uuid: Uuid = Uuid::for_ign(ign.as_str()).await?;
     let force: bool = force.unwrap_or(false) && ctx.framework().options.owners.contains(&ctx.author().id);
-    match DiscordId::matches_fetch(&user, uuid.get(), &ctx.data().hypixel_api_client).await? || force {
+    match uuid.has_discord_user(&user, &ctx.data().hypixel_api_client).await? || force {
         true => {
-            let pool: Pool<Sqlite> = ctx.data().sqlite_pool.clone();
-            let status: &str = match link_id_from_minecraft(&pool, uuid.get()).await {
-                None => match link_id_from_discord(&pool, user.id.get()).await {
+            let pool = &ctx.data().sqlite_pool;
+            let status: &str = match link_id_from_minecraft(pool, uuid.get()).await {
+                None => match link_id_from_discord(pool, user.id.get()).await {
                     None => {
-                        let id = new_link_id(&pool).await?;
-                        sqlx::query(format!("INSERT INTO discord_links VALUES ({}, {});", id.cast_signed(), user.id.get()).as_str())
-                            .execute(&pool)
+                        let id = new_link_id(pool).await?;
+                        sqlx::query(format!("INSERT INTO discord_links VALUES ({}, {});", id.inner, user.id.get()).as_str())
+                            .execute(pool)
                             .await?;
-                        sqlx::query(format!("INSERT INTO minecraft_links VALUES ({}, \"{}\");", id.cast_signed(), uuid.get()).as_str())
-                            .execute(&pool)
+                        sqlx::query(format!("INSERT INTO minecraft_links VALUES ({}, \"{}\");", id.inner, uuid.get()).as_str())
+                            .execute(pool)
                             .await?;
                         "Linked your Discord and Minecraft account."
                     }
                     Some(dc_id) => {
-                        sqlx::query(format!("INSERT INTO minecraft_links VALUES ({}, \"{}\");", dc_id.cast_signed(), uuid.get()).as_str())
-                            .execute(&pool)
+                        sqlx::query(format!("INSERT INTO minecraft_links VALUES ({}, \"{}\");", dc_id.inner, uuid.get()).as_str())
+                            .execute(pool)
                             .await?;
                         "Your Discord account has previously had an account linked. Added the new link."
                     }
                 },
-                Some(mc_id) => match link_id_from_discord(&pool, user.id.get()).await {
+                Some(mc_id) => match link_id_from_discord(pool, user.id.get()).await {
                     None => {
-                        sqlx::query(format!("INSERT INTO discord_links VALUES ({}, {});", mc_id.cast_signed(), user.id.get()).as_str())
-                            .execute(&pool)
+                        sqlx::query(format!("INSERT INTO discord_links VALUES ({}, {});", mc_id.inner, user.id.get()).as_str())
+                            .execute(pool)
                             .await?;
                         "Your Minecraft account has previously had an account linked. Added the new link."
                     }
@@ -175,22 +176,22 @@ pub(crate) async fn add<'a>(
                         sqlx::query(
                             format!(
                                 "UPDATE minecraft_links SET link_id = {} WHERE link_id = {};",
-                                mc_id.cast_signed(),
-                                dc_id.cast_signed()
+                                mc_id.inner,
+                                dc_id.inner
                             )
                                 .as_str(),
                         )
-                            .execute(&pool)
+                            .execute(pool)
                             .await?;
                         sqlx::query(
                             format!(
                                 "UPDATE discord_links SET link_id = {} WHERE link_id = {};",
-                                mc_id.cast_signed(),
-                                dc_id.cast_signed()
+                                mc_id.inner,
+                                dc_id.inner
                             )
                                 .as_str(),
                         )
-                            .execute(&pool)
+                            .execute(pool)
                             .await?;
                         "Both your Discord and Minecraft account had linked accounts. Merged all account links."
                     }
@@ -251,7 +252,8 @@ pub(crate) async fn list(ctx: Context<'_>, user: User) -> Result<(), Error> {
 pub(crate) async fn list_string(pool: &Pool<Sqlite>, user: &User) -> Result<String, Error> {
     let link_id: u16 = link_id_from_discord(pool, user.id.get())
         .await
-        .expect("This user has no linked accounts");
+        .expect("This user has no linked accounts")
+        .into();
     let link: Link = Link::new(link_id).minecraft(pool).await?.discord(pool).await?;
     let mut discord_list = String::from("### Discord:");
     for dc in link.discord_ids {
@@ -271,17 +273,16 @@ pub(crate) async fn list_string(pool: &Pool<Sqlite>, user: &User) -> Result<Stri
 
 #[poise::command(slash_command)]
 pub(crate) async fn remove(_ctx: Context<'_>) -> Result<(), Error> {
-    todo!()
+    unimplemented!();
 }
 
-async fn link_id_from_minecraft(pool: &Pool<Sqlite>, minecraft_uuid: &str) -> Option<u16> {
+async fn link_id_from_minecraft(pool: &Pool<Sqlite>, minecraft_uuid: &str) -> Option<LinkId> {
     query_as(format!("SELECT link_id FROM minecraft_links WHERE minecraft_uuid = \"{minecraft_uuid}\" LIMIT 1;").as_str())
         .fetch_optional(pool)
         .await
         .expect("Database error: fetching link id by uuid")
-        .map(|link_id: LinkId| link_id.link_id.cast_unsigned())
 }
-async fn link_id_from_discord(pool: &Pool<Sqlite>, snowflake: u64) -> Option<u16> {
+async fn link_id_from_discord(pool: &Pool<Sqlite>, snowflake: u64) -> Option<LinkId> {
     query_as(
         format!(
             "SELECT link_id FROM discord_links WHERE discord_id = {} LIMIT 1;",
@@ -292,17 +293,40 @@ async fn link_id_from_discord(pool: &Pool<Sqlite>, snowflake: u64) -> Option<u16
         .fetch_optional(pool)
         .await
         .expect("Database error: fetching link_id for discord_id")
-        .map(|link_id: LinkId| link_id.link_id.cast_unsigned())
 }
 
 #[derive(sqlx::FromRow)]
 struct LinkId {
-    link_id: i16,
+    #[sqlx(rename = "link_id")]
+    inner: i16,
 }
 
-async fn new_link_id(pool: &Pool<Sqlite>) -> Result<u16, Error> {
+impl From<u16> for LinkId {
+    fn from(unsigned: u16) -> Self {
+        Self {
+            inner: unsigned.cast_signed()
+        }
+    }
+}
+
+impl Into<u16> for LinkId {
+    fn into(self) -> u16 {
+        self.inner.cast_unsigned()
+    }
+}
+
+impl Add<i16> for LinkId {
+    type Output = LinkId;
+
+    fn add(mut self, rhs: i16) -> Self::Output {
+        self.inner += rhs;
+        self
+    }
+}
+
+async fn new_link_id(pool: &Pool<Sqlite>) -> Result<LinkId, Error> {
     let result: LinkId = query_as("SELECT MAX(link_id) AS link_id FROM minecraft_links;")
         .fetch_one(pool)
         .await?;
-    Ok(result.link_id.cast_unsigned() + 1)
+    Ok(result + 1)
 }

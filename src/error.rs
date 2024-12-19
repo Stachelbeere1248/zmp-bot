@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter, Result as FmtResult};
 use poise::{CreateReply, FrameworkError};
 
 use crate::Data;
@@ -19,8 +20,8 @@ pub enum Error {
     Other(String),
 }
 
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl Display for Error {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
         match self {
             Error::SqlxError(e) => write!(f, "SQLx Error: {}", e),
             Error::HttpsError(e) => write!(f, "HTTPS Error (Hypixel / Mojang API):\n{}", e),
