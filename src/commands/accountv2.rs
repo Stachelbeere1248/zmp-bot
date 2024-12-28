@@ -1,30 +1,29 @@
-use std::ops::Add;
 use poise::CreateReply;
 use reqwest::{Client, Response};
 use serde::Deserialize;
-use serenity::{
-    all::{ChannelId, CreateActionRow, CreateAllowedMentions, CreateButton, CreateMessage, ReactionType, User},
-};
-use serenity::all::{ButtonStyle};
-use sqlx::{Pool, query_as, Sqlite};
+use serenity::all::ButtonStyle;
+use serenity::all::{ChannelId, CreateActionRow, CreateAllowedMentions, CreateButton, CreateMessage, ReactionType, User};
+use sqlx::{query_as, Pool, Sqlite};
+use std::ops::Add;
 
 use crate::commands::command_helper::cooldown;
-use crate::Context;
 use crate::error::Error;
+use crate::error::Error::Other;
+use crate::Context;
 
 #[derive(Deserialize)]
 struct Links {
     #[serde(rename = "DISCORD")]
-    pub discord: String,
+    pub discord: Option<String>,
 }
 #[derive(Deserialize)]
 struct SocialMedia {
-    pub links: Links,
+    pub links: Option<Links>,
 }
 #[derive(Deserialize)]
 struct HypixelPlayer {
     #[serde(rename = "socialMedia")]
-    pub social_media: SocialMedia,
+    pub social_media: Option<SocialMedia>,
 }
 #[derive(Deserialize)]
 struct HypixelResponse {
@@ -49,9 +48,7 @@ impl Uuid {
         let url: String = format!("https://api.mojang.com/users/profiles/minecraft/{ign}");
         let response_400: Response = reqwest::get(url).await?.error_for_status()?;
         let deserialized = response_400.json::<MojangPlayer>().await?;
-        let uuid = Uuid {
-            uuid: deserialized.id,
-        };
+        let uuid = Uuid { uuid: deserialized.id };
         Ok(uuid)
     }
 
@@ -71,7 +68,18 @@ impl Uuid {
         let url: String = format!("https://api.hypixel.net/v2/player?uuid={}", self.uuid);
         let response_400: Response = client.get(url).send().await?.error_for_status()?;
         let deserialized = response_400.json::<HypixelResponse>().await?;
-        let matches = deserialized.player.social_media.links.discord == user.name;
+        let matches = deserialized
+            .player
+            .social_media
+            .map(|sm| sm.links)
+            .flatten()
+            .map(|l| l.discord)
+            .flatten()
+            .ok_or(Other(format!(
+                "The Hypixel profile has no Discord account linked. Please follow the steps in {}",
+                ChannelId::new(1256219552568840263_u64)
+            )))?
+            == user.name;
         Ok(matches)
     }
 }
@@ -127,7 +135,7 @@ pub(crate) async fn account(_ctx: Context<'_>) -> Result<(), Error> {
     slash_command,
     install_context = "User|Guild",
     interaction_context = "Guild|BotDm|PrivateChannel",
-    ephemeral = "false",
+    ephemeral = "false"
 )]
 /// Verify a Minecraft account on the Zombies MultiPlayer Discord.
 pub(crate) async fn add<'a>(
@@ -140,10 +148,15 @@ pub(crate) async fn add<'a>(
     #[description = "admin-only"] force: Option<bool>,
 ) -> Result<(), Error> {
     ctx.defer().await?;
+    let force: bool = force.unwrap_or(false) && ctx.framework().options.owners.contains(&ctx.author().id) && {
+        let _ = user.as_ref().ok_or(Other(
+            "Warning: attempted to run forced account add without specifying a target Discord account.".to_string(),
+        ))?;
+        true
+    };
     let user: User = user.unwrap_or(ctx.author().clone());
     let uuid: Uuid = Uuid::for_ign(ign.as_str()).await?;
-    let force: bool = force.unwrap_or(false) && ctx.framework().options.owners.contains(&ctx.author().id);
-    match uuid.has_discord_user(&user, &ctx.data().hypixel_api_client).await? || force {
+    match force || uuid.has_discord_user(&user, &ctx.data().hypixel_api_client).await? {
         true => {
             let pool = &ctx.data().sqlite_pool;
             let status: &str = match link_id_from_minecraft(pool, uuid.get()).await {
@@ -176,23 +189,21 @@ pub(crate) async fn add<'a>(
                         sqlx::query(
                             format!(
                                 "UPDATE minecraft_links SET link_id = {} WHERE link_id = {};",
-                                mc_id.inner,
-                                dc_id.inner
+                                mc_id.inner, dc_id.inner
                             )
-                                .as_str(),
+                            .as_str(),
                         )
-                            .execute(pool)
-                            .await?;
+                        .execute(pool)
+                        .await?;
                         sqlx::query(
                             format!(
                                 "UPDATE discord_links SET link_id = {} WHERE link_id = {};",
-                                mc_id.inner,
-                                dc_id.inner
+                                mc_id.inner, dc_id.inner
                             )
-                                .as_str(),
+                            .as_str(),
                         )
-                            .execute(pool)
-                            .await?;
+                        .execute(pool)
+                        .await?;
                         "Both your Discord and Minecraft account had linked accounts. Merged all account links."
                     }
                 },
@@ -233,7 +244,7 @@ pub(crate) async fn add<'a>(
     install_context = "User|Guild",
     interaction_context = "Guild|BotDm|PrivateChannel",
     ephemeral = "true",
-    context_menu_command="Account list"
+    context_menu_command = "Account list"
 )]
 /// List a users linked minecraft Accounts.
 pub(crate) async fn list(ctx: Context<'_>, user: User) -> Result<(), Error> {
@@ -244,8 +255,9 @@ pub(crate) async fn list(ctx: Context<'_>, user: User) -> Result<(), Error> {
     ctx.send(
         CreateReply::default()
             .content(s)
-            .allowed_mentions(CreateAllowedMentions::new().empty_roles().empty_users())
-    ).await?;
+            .allowed_mentions(CreateAllowedMentions::new().empty_roles().empty_users()),
+    )
+    .await?;
     Ok(())
 }
 
@@ -288,11 +300,11 @@ async fn link_id_from_discord(pool: &Pool<Sqlite>, snowflake: u64) -> Option<Lin
             "SELECT link_id FROM discord_links WHERE discord_id = {} LIMIT 1;",
             snowflake.cast_signed()
         )
-            .as_str(),
+        .as_str(),
     )
-        .fetch_optional(pool)
-        .await
-        .expect("Database error: fetching link_id for discord_id")
+    .fetch_optional(pool)
+    .await
+    .expect("Database error: fetching link_id for discord_id")
 }
 
 #[derive(sqlx::FromRow)]
@@ -304,7 +316,7 @@ struct LinkId {
 impl From<u16> for LinkId {
     fn from(unsigned: u16) -> Self {
         Self {
-            inner: unsigned.cast_signed()
+            inner: unsigned.cast_signed(),
         }
     }
 }

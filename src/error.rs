@@ -14,7 +14,7 @@ macro_rules! reply_fail_handler {
 #[derive(Debug)]
 pub enum Error {
     SqlxError(sqlx::Error),
-    HttpsError(reqwest::Error),
+    ApiError(reqwest::Error),
     SerenityError(serenity::Error),
     OnCooldown(std::time::Duration),
     Other(String),
@@ -24,7 +24,7 @@ impl Display for Error {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         match self {
             Error::SqlxError(e) => write!(f, "SQLx Error: {}", e),
-            Error::HttpsError(e) => write!(f, "HTTPS Error (Hypixel / Mojang API):\n{}", e),
+            Error::ApiError(e) => write!(f, "HTTPS Error (Hypixel / Mojang API):\n{}", e),
             Error::SerenityError(e) => write!(f, "Discord Error:\n {}", e),
             Error::OnCooldown(d) => write!(f, "This command is on cooldown. {}s remaining.", d.as_secs()),
             Error::Other(s) => write!(f, "{}", s),
@@ -40,7 +40,7 @@ impl From<sqlx::Error> for Error {
 
 impl From<reqwest::Error> for Error {
     fn from(error: reqwest::Error) -> Self {
-        Error::HttpsError(error)
+        Error::ApiError(error)
     }
 }
 
