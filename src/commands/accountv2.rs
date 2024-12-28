@@ -76,8 +76,7 @@ impl Uuid {
             .map(|l| l.discord)
             .flatten()
             .ok_or(Other(format!(
-                "The Hypixel profile has no Discord account linked. Please follow the steps in {}",
-                ChannelId::new(1256219552568840263_u64)
+                "The Hypixel profile has no Discord account linked. Please follow the steps in <#1256219552568840263>",
             )))?
             == user.name;
         Ok(matches)
