@@ -9,7 +9,7 @@ edition = "2021"
 poise = { git = "https://github.com/serenity-rs/poise" }
 serenity = { version = "0.12.4" }
 serde = { version = "1.0.216", features = ["derive"] }
-reqwest = { version = "0.12.9", features = ["json"] }
+reqwest = { version = "0.12.11", features = ["json"] }
 tokio = { version = "1.42.0", features = ["rt-multi-thread"] }
 tracing = { version = "0.1.41" }
 sqlx = { version = "0.8.2", features = ["sqlite", "sqlx-sqlite", "runtime-tokio"]}
