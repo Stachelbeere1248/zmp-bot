@@ -595,6 +595,7 @@ checksum = "65bc07b1a8bc7c85c5f2e110c476c7389b4554ba72af57d8445ea63a576b0876"
 dependencies = [
  "futures-channel",
  "futures-core",
+ "futures-executor",
  "futures-io",
  "futures-sink",
  "futures-task",
@@ -3418,6 +3419,7 @@ dependencies = [
 name = "zmp-bot"
 version = "0.1.0"
 dependencies = [
+ "futures",
  "poise",
  "reqwest 0.12.9",
  "serde",

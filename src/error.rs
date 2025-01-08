@@ -1,5 +1,5 @@
-use std::fmt::{Display, Formatter, Result as FmtResult};
 use poise::{CreateReply, FrameworkError};
+use std::fmt::{Display, Formatter, Result as FmtResult};
 
 use crate::Data;
 
@@ -54,7 +54,7 @@ pub(crate) async fn handle_error<'a>(error: FrameworkError<'a, Data, Error>) {
     match error {
         FrameworkError::Command { error, ctx, .. } => {
             reply_fail_handler!(ctx.send(CreateReply::default().content(error.to_string()).ephemeral(true)))
-        },
+        }
         FrameworkError::CommandStructureMismatch { description, ctx, .. } => {
             reply_fail_handler!(ctx.send(
                 CreateReply::default()

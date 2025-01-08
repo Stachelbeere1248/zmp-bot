@@ -2,15 +2,15 @@ use std::string::String;
 
 use poise::CreateReply;
 
-use crate::Context;
 use crate::error::Error;
+use crate::Context;
 
 #[poise::command(
     slash_command,
     owners_only,
     install_context = "User",
     interaction_context = "Guild|BotDm|PrivateChannel",
-    ephemeral = "false",
+    ephemeral = "false"
 )]
 /// Change how many helpstart bots are online, to limit usage of helpstart pings.
 pub(crate) async fn bots(

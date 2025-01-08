@@ -2,15 +2,10 @@ use poise::CreateReply;
 use serenity::all::CreateAllowedMentions;
 
 use crate::commands::command_helper;
-use crate::Context;
 use crate::error::Error;
+use crate::Context;
 
-#[poise::command(
-    slash_command,
-    install_context = "Guild",
-    interaction_context = "Guild",
-    ephemeral = "false",
-)]
+#[poise::command(slash_command, install_context = "Guild", interaction_context = "Guild", ephemeral = "false")]
 /// Ping the @helpstart to fill a queue.
 pub(crate) async fn helpstart(
     ctx: Context<'_>,

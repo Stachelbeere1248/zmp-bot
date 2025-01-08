@@ -71,13 +71,11 @@ impl Uuid {
         let matches = deserialized
             .player
             .social_media
-            .map(|sm| sm.links)
-            .flatten()
-            .map(|l| l.discord)
-            .flatten()
-            .ok_or(Other(format!(
-                "The Hypixel profile has no Discord account linked. Please follow the steps in <#1256219552568840263>",
-            )))?
+            .and_then(|sm| sm.links)
+            .and_then(|l| l.discord)
+            .ok_or(Other(
+                "The Hypixel profile has no Discord account linked. Please follow the steps in <#1256219552568840263>".to_string(),
+            ))?
             == user.name;
         Ok(matches)
     }
@@ -124,20 +122,20 @@ impl Link {
         Ok(self)
     }
 }
-#[poise::command(slash_command, subcommands("add", "list"))]
+#[poise::command(
+    slash_command,
+    subcommands("add", "list"),
+    install_context = "User|Guild",
+    interaction_context = "Guild|BotDm|PrivateChannel",
+)]
 pub(crate) async fn account(_ctx: Context<'_>) -> Result<(), Error> {
     // root of slash-commands is not invokable.
     unreachable!()
 }
 
-#[poise::command(
-    slash_command,
-    install_context = "User|Guild",
-    interaction_context = "Guild|BotDm|PrivateChannel",
-    ephemeral = "false"
-)]
+#[poise::command(slash_command, ephemeral = "false")]
 /// Verify a Minecraft account on the Zombies MultiPlayer Discord.
-pub(crate) async fn add<'a>(
+pub(crate) async fn add(
     ctx: Context<'_>,
     #[description = "Minecraft username"]
     #[min_length = 2]
@@ -238,13 +236,7 @@ pub(crate) async fn add<'a>(
     }
 }
 
-#[poise::command(
-    slash_command,
-    install_context = "User|Guild",
-    interaction_context = "Guild|BotDm|PrivateChannel",
-    ephemeral = "true",
-    context_menu_command = "Account list"
-)]
+#[poise::command(slash_command, ephemeral = "true", context_menu_command = "Account list")]
 /// List a users linked minecraft Accounts.
 pub(crate) async fn list(ctx: Context<'_>, user: User) -> Result<(), Error> {
     ctx.defer().await?;

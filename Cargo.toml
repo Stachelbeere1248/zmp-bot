@@ -13,3 +13,4 @@ reqwest = { version = "0.12.9", features = ["json"] }
 tokio = { version = "1.42.0", features = ["rt-multi-thread"] }
 tracing = { version = "0.1.41" }
 sqlx = { version = "0.8.2", features = ["sqlite", "sqlx-sqlite", "runtime-tokio"]}
+futures = "0.3.31"

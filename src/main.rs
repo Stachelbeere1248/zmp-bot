@@ -6,9 +6,9 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use poise::serenity_prelude as serenity;
-use serenity::{FullEvent, model::id::UserId};
 use serenity::all::{ActivityData, InteractionType, RoleId};
 use serenity::prelude::GatewayIntents;
+use serenity::{model::id::UserId, FullEvent};
 use sqlx::Sqlite;
 use tokio::sync::RwLock;
 
@@ -96,7 +96,7 @@ async fn event_handler(
     match event {
         FullEvent::Ready { data_about_bot, .. } => {
             println!("Logged in as '{}'!", data_about_bot.user.name);
-        },
+        }
         FullEvent::GuildMemberAddition { new_member } => {
             if new_member.guild_id.get() == 1256217633959841853_u64 {
                 new_member.add_role(ctx, RoleId::new(1256253358701023232_u64)).await?;
@@ -106,13 +106,13 @@ async fn event_handler(
             if interaction.application_id().get() == 1165594074473037824 && interaction.kind() == InteractionType::Component {
                 handlers::bot_interaction::component(ctx, interaction, data).await?;
             }
-        },
+        }
         FullEvent::Message { new_message } => {
             handlers::message::on_create(ctx, new_message).await?;
-        },
+        }
         FullEvent::ThreadCreate { thread } => {
             handlers::thread::on_create(ctx, thread).await?;
-        },
+        }
         _ => {}
     }
     Ok(())

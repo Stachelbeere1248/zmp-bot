@@ -1,7 +1,7 @@
 use std::time::Duration;
 
-use crate::Context;
 use crate::error::Error;
+use crate::Context;
 
 pub(crate) fn cooldown(ctx: &Context, user: u64, guild: u64) -> Result<(), Error> {
     let mut cooldown_tracker = ctx.command().cooldowns.lock().unwrap();

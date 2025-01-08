@@ -7,8 +7,8 @@ use crate::commands::command_helper::cooldown;
 use crate::commands::lfg::Difficulty::Normal;
 use crate::commands::lfg::Map::*;
 use crate::commands::lfg::Mode::*;
-use crate::Context;
 use crate::error::Error;
+use crate::Context;
 
 #[derive(Debug, poise::ChoiceParameter, PartialEq)]
 pub enum Map {
@@ -43,12 +43,7 @@ pub enum Difficulty {
     #[name = "R.I.P."]
     Rip,
 }
-#[poise::command(
-    slash_command,
-    install_context = "Guild",
-    interaction_context = "Guild",
-    ephemeral = "false",
-)]
+#[poise::command(slash_command, install_context = "Guild", interaction_context = "Guild", ephemeral = "false")]
 /// Find a team for Hypixel Zombies.
 pub(crate) async fn lfg(
     ctx: Context<'_>,
@@ -102,7 +97,7 @@ pub(crate) async fn lfg(
         AlienArcadium => Normal,
     };
 
-    let mut reply_content: String = format!("## <@&{ping}> {current}/{desired} {map_name}", );
+    let mut reply_content: String = format!("## <@&{ping}> {current}/{desired} {map_name}",);
     match difficulty {
         Normal => {}
         Difficulty::Hard | Difficulty::Rip => {
