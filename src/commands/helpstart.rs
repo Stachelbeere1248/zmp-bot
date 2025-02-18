@@ -44,10 +44,13 @@ pub(crate) async fn helpstart(
     };
 
     let bots = fetch_all(&ctx.data().clients.local_api_client).await?;
-    let usable = bots.iter().filter(|b| match b.list_type() {
-        Whitelist => b.list().iter().any(|w| mc_accounts.contains(w)),
-        Blacklist => mc_accounts.iter().any(|m| !b.list().contains(m)),
-    }).collect::<Vec<_>>();
+    let usable = bots
+        .iter()
+        .filter(|b| match b.list_type() {
+            Whitelist => b.list().iter().any(|w| mc_accounts.contains(w)),
+            Blacklist => mc_accounts.iter().any(|m| !b.list().contains(m)),
+        })
+        .collect::<Vec<_>>();
 
     let s: String = usable
         .iter()
@@ -60,7 +63,7 @@ pub(crate) async fn helpstart(
         .filter_map(|b| {
             if !*b.in_party()
                 && *b.last_updated()
-                    < (SystemTime::now().duration_since(UNIX_EPOCH).ok()? - Duration::from_secs(5))
+                    > (SystemTime::now().duration_since(UNIX_EPOCH).ok()? - Duration::from_secs(5))
                         .as_secs_f64()
             {
                 Some(b.username().as_str())
@@ -85,7 +88,8 @@ pub(crate) async fn helpstart(
 
     let reply = CreateReply::default()
         .content(format!(
-            "Bots that are ready for use: {ready}\nBots you can use: {s}\nTotal registered bots: {}",
+            "Bots that are ready for use: {ready}\nBots you can use: {s}\nTotal registered bots: \
+             {}",
             bots.len()
         ))
         .ephemeral(ephemeral)
@@ -99,11 +103,13 @@ pub(crate) async fn helpstart(
         .filter(move |i| i.data.custom_id == bid.to_string())
         .await
     {
-        let iter = bots
-            .iter()
-            .skip_while(|&b| b.note().trim().is_empty() || usable.iter().any(|&u| std::ptr::eq(u,b)))
-            .map(|b| (b.username(), b.note(), true));
-        let embed = CreateEmbed::new().fields(iter).title("Notes").description(
+        let embed = CreateEmbed::new().fields(bots.iter().filter_map(|b| {
+            if b.note().trim().is_empty() || usable.iter().any(|&u| std::ptr::eq(u, b)) {
+                None
+            } else {
+                Some((b.username(), b.note(), true))
+            }
+        })).title("Notes").description(
             "Below is the note of each bot that you cannot use. It might help you get whitelisted.",
         );
         i.create_response(
