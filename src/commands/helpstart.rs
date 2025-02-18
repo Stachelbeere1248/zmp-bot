@@ -18,16 +18,14 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
     slash_command,
     install_context = "Guild|User",
     interaction_context = "Guild|BotDm|PrivateChannel",
-    ephemeral = "false"
+    ephemeral = "true"
 )]
 // Check for bots available to you.
 pub(crate) async fn helpstart(
     ctx: Context<'_>,
     user: Option<String>,
-    ephemeral: Option<bool>,
 ) -> Result<(), Error> {
     ctx.defer().await?;
-    let ephemeral = ephemeral.unwrap_or(true);
     let links = super::accountv2::get_link(ctx.author(), &ctx.data().sqlite_pool).await?;
     let mc_accounts = match user {
         None => {
@@ -92,7 +90,6 @@ pub(crate) async fn helpstart(
              {}",
             bots.len()
         ))
-        .ephemeral(ephemeral)
         .components(components);
     ctx.send(reply).await?;
 
