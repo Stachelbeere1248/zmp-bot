@@ -37,7 +37,7 @@ pub(crate) enum ListType {
 }
 
 pub(crate) async fn fetch_all(client: &Client) -> Result<Response, Error> {
-    let url = "localhost:6969/list";
+    let url = "https://localhost:6969/list";
     let response: Response = client
         .get(url)
         .send()
