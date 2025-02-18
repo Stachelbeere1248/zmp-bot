@@ -24,7 +24,7 @@ impl Display for Error {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         match self {
             Error::SqlxError(e) => write!(f, "SQLx Error: {}", e),
-            Error::ApiError(e) => write!(f, "HTTPS Error (Hypixel / Mojang API):\n{}", e),
+            Error::ApiError(e) => write!(f, "HTTPS Error:\n{}", e),
             Error::SerenityError(e) => write!(f, "Discord Error:\n {}", e),
             Error::OnCooldown(d) => write!(
                 f,

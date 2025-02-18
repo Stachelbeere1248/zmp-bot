@@ -20,7 +20,7 @@ pub(crate) async fn helpstart(ctx: Context<'_>) -> Result<(), Error> {
         .map(|a| name(&ctx.data().caches, &ctx.data().clients.general, a.uuid))
         .collect::<Vec<_>>();
     let mc_accounts = futures::future::try_join_all(mc_accounts).await?;
-    let bots = fetch_all(&ctx.data().clients.local_api_client).await?.bots;
+    let bots = fetch_all(&ctx.data().clients.local_api_client).await?;
     let usable = bots
         .iter()
         .filter_map(|b| {

@@ -4,11 +4,6 @@ use reqwest::Client;
 use serde::Deserialize;
 
 #[derive(Deserialize, Getters)]
-pub(crate) struct Response {
-    pub(crate) bots: Vec<Bot>,
-}
-
-#[derive(Deserialize, Getters)]
 #[getset(get = "pub(crate)")]
 pub(crate) struct Bot {
     username: String,
@@ -36,9 +31,9 @@ pub(crate) enum ListType {
     Blacklist,
 }
 
-pub(crate) async fn fetch_all(client: &Client) -> Result<Response, Error> {
+pub(crate) async fn fetch_all(client: &Client) -> Result<Vec<Bot>, Error> {
     let url = "https://localhost:6969/list";
-    let response: Response = client
+    let response: Vec<Bot> = client
         .get(url)
         .send()
         .await?
