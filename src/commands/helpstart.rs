@@ -10,7 +10,6 @@ use poise::serenity_prelude::CreateButton;
 use poise::serenity_prelude::CreateEmbed;
 use poise::serenity_prelude::CreateInteractionResponse;
 use poise::serenity_prelude::CreateInteractionResponseMessage;
-use poise::serenity_prelude::EditMessage;
 use poise::CreateReply;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -21,11 +20,8 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
     ephemeral = "true"
 )]
 // Check for bots available to you.
-pub(crate) async fn helpstart(
-    ctx: Context<'_>,
-    user: Option<String>,
-) -> Result<(), Error> {
-    ctx.defer().await?;
+pub(crate) async fn helpstart(ctx: Context<'_>, user: Option<String>) -> Result<(), Error> {
+    ctx.defer_ephemeral().await?;
     let links = super::accountv2::get_link(ctx.author(), &ctx.data().sqlite_pool).await?;
     let mc_accounts = match user {
         None => {
@@ -90,35 +86,51 @@ pub(crate) async fn helpstart(
              {}",
             bots.len()
         ))
-        .components(components);
-    ctx.send(reply).await?;
+        .components(components)
+        .ephemeral(true);
+    let m = ctx.send(reply).await?;
 
-    while let Some(mut i) = ComponentInteractionCollector::new(ctx)
+    while let Some(i) = ComponentInteractionCollector::new(ctx)
         .author_id(ctx.author().id)
         .channel_id(ctx.channel_id())
         .timeout(std::time::Duration::from_secs(60))
         .filter(move |i| i.data.custom_id == bid.to_string())
         .await
     {
-        let embed = CreateEmbed::new().fields(bots.iter().filter_map(|b| {
-            if b.note().trim().is_empty() || usable.iter().any(|&u| std::ptr::eq(u, b)) {
-                None
-            } else {
-                Some((b.username(), b.note(), true))
-            }
-        })).title("Notes").description(
-            "Below is the note of each bot that you cannot use. It might help you get whitelisted.",
-        );
+        let embed = CreateEmbed::new()
+            .fields(bots.iter().filter_map(|b| {
+                if b.note().trim().is_empty() || usable.iter().any(|&u| std::ptr::eq(u, b)) {
+                    None
+                } else {
+                    Some((b.username(), b.note(), true))
+                }
+            }))
+            .title("Notes")
+            .description(
+                "Below is the note of each bot that you cannot use. It might help you get \
+                 whitelisted.",
+            );
         i.create_response(
             ctx,
             CreateInteractionResponse::Message(
-                CreateInteractionResponseMessage::new().embed(embed),
+                CreateInteractionResponseMessage::new()
+                    .embed(embed)
+                    .ephemeral(true),
             ),
         )
         .await?;
-        i.message
-            .edit(ctx, EditMessage::default().components(vec![]))
-            .await?;
     }
+    m.edit(
+        ctx,
+        CreateReply::default()
+            .content(format!(
+                "Bots that are ready for use: {ready}\nBots you can use: {s}\nTotal registered \
+                 bots: {}",
+                bots.len()
+            ))
+            .ephemeral(true)
+            .components(vec![]),
+    )
+    .await?;
     Ok(())
 }
