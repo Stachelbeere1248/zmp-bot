@@ -43,7 +43,12 @@ pub enum Difficulty {
     #[name = "R.I.P."]
     Rip,
 }
-#[poise::command(slash_command, install_context = "Guild", interaction_context = "Guild", ephemeral = "false")]
+#[poise::command(
+    slash_command,
+    install_context = "Guild",
+    interaction_context = "Guild",
+    ephemeral = "false"
+)]
 /// Find a team for Hypixel Zombies.
 pub(crate) async fn lfg(
     ctx: Context<'_>,
@@ -166,19 +171,39 @@ pub(crate) async fn expert(
     let (ping, allowed_roles): (u64, Vec<u64>) = match mode {
         ExpertMap::Speedrun => (
             1295322375637958716,
-            ROLE_LIST.iter().skip(2).map(|tier| [tier[4], tier[5]]).flatten().collect(),
+            ROLE_LIST
+                .iter()
+                .skip(2)
+                .map(|tier| [tier[4], tier[5]])
+                .flatten()
+                .collect(),
         ),
         ExpertMap::DeadEnd => (
             1295321319344177172,
-            ROLE_LIST.iter().skip(2).map(|tier| [tier[1], tier[5]]).flatten().collect(),
+            ROLE_LIST
+                .iter()
+                .skip(2)
+                .map(|tier| [tier[1], tier[5]])
+                .flatten()
+                .collect(),
         ),
         ExpertMap::BadBlood => (
             1295322259631640607,
-            ROLE_LIST.iter().skip(2).map(|tier| [tier[2], tier[5]]).flatten().collect(),
+            ROLE_LIST
+                .iter()
+                .skip(2)
+                .map(|tier| [tier[2], tier[5]])
+                .flatten()
+                .collect(),
         ),
         ExpertMap::AlienArcadium => (
             1295322327910842441,
-            ROLE_LIST.iter().skip(2).map(|tier| [tier[3], tier[5]]).flatten().collect(),
+            ROLE_LIST
+                .iter()
+                .skip(2)
+                .map(|tier| [tier[3], tier[5]])
+                .flatten()
+                .collect(),
         ),
     };
     let is_expert: bool = ctx

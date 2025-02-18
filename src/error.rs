@@ -26,7 +26,11 @@ impl Display for Error {
             Error::SqlxError(e) => write!(f, "SQLx Error: {}", e),
             Error::ApiError(e) => write!(f, "HTTPS Error (Hypixel / Mojang API):\n{}", e),
             Error::SerenityError(e) => write!(f, "Discord Error:\n {}", e),
-            Error::OnCooldown(d) => write!(f, "This command is on cooldown. {}s remaining.", d.as_secs()),
+            Error::OnCooldown(d) => write!(
+                f,
+                "This command is on cooldown. {}s remaining.",
+                d.as_secs()
+            ),
             Error::Other(s) => write!(f, "{}", s),
         }
     }
@@ -53,14 +57,20 @@ impl From<serenity::Error> for Error {
 pub(crate) async fn handle_error<'a>(error: FrameworkError<'a, Data, Error>) {
     match error {
         FrameworkError::Command { error, ctx, .. } => {
-            reply_fail_handler!(ctx.send(CreateReply::default().content(error.to_string()).ephemeral(true)))
+            reply_fail_handler!(ctx.send(
+                CreateReply::default()
+                    .content(error.to_string())
+                    .ephemeral(true)
+            ))
         }
-        FrameworkError::CommandStructureMismatch { description, ctx, .. } => {
+        FrameworkError::CommandStructureMismatch {
+            description, ctx, ..
+        } => {
             reply_fail_handler!(ctx.send(
                 CreateReply::default()
                     .content(format!(
-                        "# Command arguments did not match. The command probably has been updated recently. Try reloading Discord. \
-                         Description:\n{}",
+                        "# Command arguments did not match. The command probably has been updated \
+                         recently. Try reloading Discord. Description:\n{}",
                         description
                     ))
                     .ephemeral(true)

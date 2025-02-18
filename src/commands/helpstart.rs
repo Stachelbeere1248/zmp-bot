@@ -1,40 +1,45 @@
-use poise::CreateReply;
-use serenity::all::CreateAllowedMentions;
-
-use crate::commands::command_helper;
+use crate::data::helpstart_api::fetch_all;
+use crate::data::helpstart_api::ListType::*;
+use crate::data::mojang::name;
 use crate::error::Error;
 use crate::Context;
+use poise::CreateReply;
 
-#[poise::command(slash_command, install_context = "Guild", interaction_context = "Guild", ephemeral = "false")]
-/// Ping the @helpstart to fill a queue.
-pub(crate) async fn helpstart(
-    ctx: Context<'_>,
-    #[min = 1_u8]
-    #[max = 3_u8]
-    #[description = "amount of players in your party, DO NOT include bots"]
-    #[rename = "current"]
-    current_players: u8,
-) -> Result<(), Error> {
-    let needed_players = 4 - current_players;
-    let bots = *ctx.data().bots.read().await;
-    let g = ctx.guild_id().unwrap().get();
-    let mut reply = CreateReply::default();
-    let ping = match g {
-        1256217633959841853_u64 => 1257411572092113017_u64,
-        _ => 0_u64,
-    };
+#[poise::command(
+    slash_command,
+    install_context = "Guild|User",
+    interaction_context = "Guild|BotDm",
+    ephemeral = "true"
+)]
+// Check for bots available to you.
+pub(crate) async fn helpstart(ctx: Context<'_>) -> Result<(), Error> {
+    let links = super::accountv2::get_link(ctx.author(), &ctx.data().sqlite_pool).await?;
+    let mc_accounts = links
+        .minecraft_accounts
+        .into_iter()
+        .map(|a| name(&ctx.data().caches, &ctx.data().clients.general, a.uuid))
+        .collect::<Vec<_>>();
+    let mc_accounts = futures::future::try_join_all(mc_accounts).await?;
+    let bots = fetch_all(&ctx.data().clients.local_api_client).await?.bots;
+    let usable = bots
+        .iter()
+        .filter_map(|b| {
+            if match b.list_type() {
+                Whitelist => b.list().iter().any(|w| mc_accounts.contains(w)),
+                Blacklist => mc_accounts.iter().any(|m| !b.list().contains(m)),
+            } {
+                Some(b.username().as_str())
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<_>>();
+    let s: String = usable.join(", ");
 
-    reply = if bots >= needed_players {
-        reply
-            .content("Bots available. Please use <@424767825001971715> in the bot-commands channel instead.")
-            .ephemeral(true)
-    } else {
-        command_helper::cooldown(&ctx, 1200, 600)?;
-        reply
-            .content(format!("## <@&{ping}>\nneed: {}", needed_players - bots))
-            .ephemeral(false)
-            .allowed_mentions(CreateAllowedMentions::new().roles(vec![ping]))
-    };
+    let reply = CreateReply::default().content(format!(
+        "Accounts you can use: {s}\nTotal registered bots: {}",
+        bots.len()
+    ));
     ctx.send(reply).await?;
     Ok(())
 }

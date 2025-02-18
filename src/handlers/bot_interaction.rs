@@ -16,7 +16,11 @@ use serenity::all::{ComponentInteractionDataKind, CreateInteractionResponse};
 use crate::error::Error;
 use crate::Data;
 
-pub(crate) async fn component(ctx: &Context, interaction: &Interaction, data: &Data) -> Result<(), Error> {
+pub(crate) async fn component(
+    ctx: &Context,
+    interaction: &Interaction,
+    data: &Data,
+) -> Result<(), Error> {
     let component = interaction.clone().message_component().unwrap();
     match component.data.kind {
         ComponentInteractionDataKind::Button => button(ctx, component, data).await,
@@ -24,8 +28,17 @@ pub(crate) async fn component(ctx: &Context, interaction: &Interaction, data: &D
     }
 }
 
-async fn button(ctx: &Context, mut interaction: ComponentInteraction, data: &Data) -> Result<(), Error> {
-    let u = interaction.message.mentions.first().expect("Message did not mention a user.").id;
+async fn button(
+    ctx: &Context,
+    mut interaction: ComponentInteraction,
+    data: &Data,
+) -> Result<(), Error> {
+    let u = interaction
+        .message
+        .mentions
+        .first()
+        .expect("Message did not mention a user.")
+        .id;
     match interaction.data.custom_id.as_str() {
         "accept_verification" => {
             let member = interaction
@@ -37,7 +50,10 @@ async fn button(ctx: &Context, mut interaction: ComponentInteraction, data: &Dat
             let (_, _, _dm, _) = futures::try_join!(
                 member.add_role(ctx, RoleId::new(1256218805911425066_u64)),
                 member.remove_role(ctx, RoleId::new(1256253358701023232_u64)),
-                u.direct_message(ctx, CreateMessage::new().content("Your verified minecraft account was approved.")),
+                u.direct_message(
+                    ctx,
+                    CreateMessage::new().content("Your verified minecraft account was approved.")
+                ),
                 interaction.message.edit(
                     ctx,
                     EditMessage::new().components(vec![CreateActionRow::Buttons(vec![
@@ -55,12 +71,17 @@ async fn button(ctx: &Context, mut interaction: ComponentInteraction, data: &Dat
                     ])]),
                 )
             )?;
-            interaction.create_response(ctx, CreateInteractionResponse::Acknowledge).await?;
+            interaction
+                .create_response(ctx, CreateInteractionResponse::Acknowledge)
+                .await?;
             Ok(())
         }
         "deny_verification" => {
             let (_dm, _) = futures::try_join!(
-                u.direct_message(ctx, CreateMessage::new().content("Your verified minecraft account was denied.")),
+                u.direct_message(
+                    ctx,
+                    CreateMessage::new().content("Your verified minecraft account was denied.")
+                ),
                 interaction.message.edit(
                     ctx,
                     EditMessage::new().components(vec![CreateActionRow::Buttons(vec![
@@ -78,14 +99,29 @@ async fn button(ctx: &Context, mut interaction: ComponentInteraction, data: &Dat
                     ])]),
                 )
             )?;
-            interaction.create_response(ctx, CreateInteractionResponse::Acknowledge).await?;
+            interaction
+                .create_response(ctx, CreateInteractionResponse::Acknowledge)
+                .await?;
             Ok(())
         }
         "list_accounts" => {
             let user = interaction.message.mentions.first().unwrap();
-            let s: String = crate::commands::accountv2::list_string(&data.sqlite_pool, user).await?;
+            let s: String = crate::commands::accountv2::list_string(
+                &data.sqlite_pool,
+                user,
+                &data.caches,
+                &data.clients.general,
+            )
+            .await?;
             interaction
-                .create_response(ctx, Message(CreateInteractionResponseMessage::new().content(s).ephemeral(true)))
+                .create_response(
+                    ctx,
+                    Message(
+                        CreateInteractionResponseMessage::new()
+                            .content(s)
+                            .ephemeral(true),
+                    ),
+                )
                 .await?;
             Ok(())
         }
